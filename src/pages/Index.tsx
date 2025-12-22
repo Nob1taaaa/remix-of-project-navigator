@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import logoImage from "@/assets/logo.png";
 
 const Index = () => {
   const { toast } = useToast();
@@ -53,22 +54,24 @@ const Index = () => {
       {/* Top navigation */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/90 via-primary to-accent/80 shadow-[var(--shadow-glow)]">
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-            </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img 
+              src={logoImage} 
+              alt="Campus Innovation Hackathon Logo" 
+              className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain bg-white/90 p-1 shadow-sm"
+            />
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="text-xs font-semibold tracking-tight sm:text-sm md:text-base">CampusConnect AI</span>
+                <span className="text-xs font-semibold tracking-tight sm:text-sm md:text-base">Campus Innovation</span>
                 <Badge
                   variant="secondary"
                   className="border-primary/20 bg-primary/10 text-[0.55rem] sm:text-[0.65rem] uppercase tracking-wide text-foreground"
                 >
-                  Beta
+                  Hackathon
                 </Badge>
               </div>
               <p className="hidden text-xs text-muted-foreground sm:block">
-                One intelligent home for your entire campus.
+                Innovate. Create. Code.
               </p>
             </div>
           </div>
