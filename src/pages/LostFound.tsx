@@ -445,10 +445,10 @@ const LostFoundPage = () => {
                 activities
                   .slice(0, 10)
                   .map((item) => (
-                    <div key={item.id} className="relative mb-3 flex flex-col gap-0.5 last:mb-0">
+                    <div key={item.id} className="relative mb-3 flex flex-col gap-0.5 pl-5 last:mb-0">
                       <span
                         className={
-                          "absolute -left-1 top-1 h-2 w-2 rounded-full " +
+                          "absolute left-0 top-1.5 h-2 w-2 rounded-full " +
                           (item.badgeColor === "primary"
                             ? "bg-primary"
                             : item.badgeColor === "destructive"
