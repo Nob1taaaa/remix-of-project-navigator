@@ -230,7 +230,10 @@ const Index = () => {
 
           {/* Highlight cards */}
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            <Card className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
+            <Card 
+              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl"
+              onClick={() => navigate("/events")}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">This week</CardTitle>
                 <CalendarDays className="h-4 w-4 text-primary" />
