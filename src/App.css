@@ -1,0 +1,8 @@
+/* Reset default Vite styles – layout handled by Tailwind design system */
+
+:root,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+}
