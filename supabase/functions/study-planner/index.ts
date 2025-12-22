@@ -107,9 +107,7 @@ Always base your plan on the student profile given below.`;
             content: `Create a personalised weekly study & placement plan.\n\n${userProfileSummary}`,
           },
         ],
-        // Use a smaller completion budget so the model doesn't spend
-        // everything on internal reasoning tokens and return empty content.
-        max_completion_tokens: 600,
+        max_completion_tokens: 2048,
       }),
     });
 
