@@ -176,7 +176,7 @@ const LostFoundPage = () => {
       className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[0.7rem] transition-colors ${
         activeTab === id
           ? "bg-primary text-primary-foreground"
-          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+          : "bg-primary/10 text-foreground hover:bg-primary/20 border border-primary/20"
       }`}
     >
       {label}
@@ -205,7 +205,7 @@ const LostFoundPage = () => {
           <Button
             size="sm"
             variant="outline"
-            className="h-8 rounded-full"
+            className="h-8 rounded-full border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/50"
             type="button"
             onClick={() => handleQuickSelect("found")}
           >
@@ -222,7 +222,7 @@ const LostFoundPage = () => {
           <TabButton id="found" label="Found" />
           <TabButton id="mine" label="My posts" />
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-secondary/70 px-3 py-2 text-[0.7rem] text-secondary-foreground">
+        <div className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 px-3 py-2 text-[0.7rem] text-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           <span>
             AI summary (concept): <strong>3</strong> likely matches across lost &amp; found. In the real system this box
@@ -260,8 +260,8 @@ const LostFoundPage = () => {
               const isLost = post.type === "lost";
 
               const badgeClasses = isLost
-                ? "border-destructive/60 bg-destructive/10 text-[0.65rem] text-destructive-foreground"
-                : "border-border/80 bg-secondary text-[0.65rem]";
+                ? "border-destructive/40 bg-destructive/10 text-[0.65rem] text-foreground"
+                : "border-primary/40 bg-primary/10 text-[0.65rem] text-foreground";
 
               const previewBg = isLost
                 ? "bg-gradient-to-br from-destructive/15 to-destructive/5"
@@ -308,7 +308,7 @@ const LostFoundPage = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 rounded-full text-[0.7rem]"
+                          className="h-8 rounded-full text-[0.7rem] border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10"
                           type="button"
                           onClick={() => {
                             setPosts((prev) => prev.filter((p) => p.id !== post.id));
