@@ -81,7 +81,7 @@ serve(async (req) => {
           { role: "system", content: systemPrompt },
           ...messages.map((m) => ({ role: m.role, content: m.content })),
         ],
-        max_completion_tokens: 512,
+        max_completion_tokens: 2048,
       }),
     });
 
