@@ -482,7 +482,7 @@ const LostFoundPage = () => {
             <ol className="list-decimal space-y-1 pl-4">
               <li>
                 <strong>Store clean text</strong> &mdash; every post saves type, title, description, and location in the
-                <code className="mx-1 rounded bg-secondary px-1">lost_found</code> table.
+                <code className="mx-1 px-1 text-primary font-medium">lost_found</code> table.
               </li>
               <li>
                 <strong>Convert to vectors</strong> &mdash; an AI model turns each description into an embedding
