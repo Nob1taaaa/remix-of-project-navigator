@@ -276,7 +276,9 @@ const LostFoundPage = () => {
                   </CardHeader>
                   <CardContent className="space-y-3 text-xs">
                     <div className="flex gap-3">
-                      <div className={`h-14 w-14 flex-shrink-0 rounded-xl ${previewBg}`} />
+                      <div className={`h-14 w-14 flex-shrink-0 rounded-xl border-2 border-primary/30 flex items-center justify-center ${previewBg}`}>
+                        <ArchiveRestore className="h-6 w-6 text-primary/60" />
+                      </div>
                       <p className="text-muted-foreground">{post.description}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
