@@ -51,18 +51,18 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-transparent text-foreground">
       {/* Top navigation */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/90 via-primary to-accent/80 shadow-[var(--shadow-glow)]">
-              <Sparkles className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/90 via-primary to-accent/80 shadow-[var(--shadow-glow)]">
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold tracking-tight md:text-base">CampusConnect AI</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-xs font-semibold tracking-tight sm:text-sm md:text-base">CampusConnect AI</span>
                 <Badge
                   variant="secondary"
-                  className="border-border/70 bg-secondary/60 text-[0.65rem] uppercase tracking-wide"
+                  className="border-primary/20 bg-primary/10 text-[0.55rem] sm:text-[0.65rem] uppercase tracking-wide text-foreground"
                 >
                   Beta
                 </Badge>
@@ -73,9 +73,9 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
-              className="hidden items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-xs text-muted-foreground shadow-sm transition-colors hover:bg-secondary/80 md:flex"
+              className="hidden items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-foreground shadow-sm transition-colors hover:bg-primary/10 md:flex"
               type="button"
               onClick={() =>
                 toast({
@@ -84,32 +84,32 @@ const Index = () => {
                 })
               }
             >
-              <Search className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="mr-1 h-3.5 w-3.5 text-primary" />
               <span>Search events, groups, questions…</span>
             </button>
             <Button
               size="icon"
               variant="outline"
-              className="relative h-9 w-9 rounded-full border-border/70 bg-background/80"
+              className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10"
               type="button"
               onClick={handleNotificationsClick}
             >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-1 top-1 inline-flex h-1.5 w-1.5 rounded-full bg-accent pulse" />
+              <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground" />
+              <span className="absolute right-1 top-1 inline-flex h-1.5 w-1.5 rounded-full bg-primary pulse" />
             </Button>
             {user ? (
               <>
-                <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/70 text-xs font-semibold md:flex">
+                <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/70 text-xs font-semibold text-primary-foreground md:flex">
                   {user.email?.charAt(0).toUpperCase()}
                 </div>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-9 w-9 rounded-full"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-full hover:bg-primary/10"
                   onClick={handleSignOut}
                   title="Sign out"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </>
             ) : (
@@ -117,7 +117,7 @@ const Index = () => {
                 size="sm"
                 variant="outline"
                 onClick={() => navigate("/auth")}
-                className="text-xs"
+                className="text-[0.65rem] sm:text-xs h-7 sm:h-8 px-2.5 sm:px-3 rounded-full border-primary/20 bg-primary/5 text-foreground hover:bg-primary/10"
               >
                 Sign In
               </Button>
@@ -127,16 +127,16 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-24 pt-6 md:px-6 md:pt-10 lg:flex-row">
+      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-3 pb-24 pt-4 sm:gap-6 sm:px-4 md:gap-8 md:px-6 md:pt-10 lg:flex-row">
         {/* Left column – hero & highlights */}
-        <section className="flex-1 space-y-6 animate-fade-in">
-          <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-background/80 p-6 shadow-[var(--shadow-soft)] md:p-8">
+        <section className="flex-1 space-y-4 sm:space-y-5 md:space-y-6 animate-fade-in">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-primary/20 bg-background/80 p-4 sm:p-5 shadow-[var(--shadow-soft)] md:p-8">
             <div className="pointer-events-none absolute -left-10 top-[-40px] h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
             <div className="pointer-events-none absolute -right-10 bottom-[-40px] h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
 
             <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="space-y-4">
-                <h1 className="max-w-xl text-balance text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
+                <h1 className="max-w-xl text-balance text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
                   Make your campus
                   <span className="bg-gradient-to-br from-primary via-accent to-primary bg-clip-text text-transparent">
                     {" "}
@@ -147,9 +147,9 @@ const Index = () => {
                   Events, lost &amp; found, study groups, and anonymous Q&amp;A – all in one place, powered by an AI campus
                   assistant that never sleeps.
                 </p>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                   <Button
-                    className="hover-scale bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground shadow-[var(--shadow-glow)]"
+                    className="hover-scale bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground shadow-[var(--shadow-glow)] w-full sm:w-auto text-sm"
                     type="button"
                     onClick={handlePrimaryCta}
                   >
@@ -157,7 +157,7 @@ const Index = () => {
                     <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Button>
                   <button
-                    className="story-link text-xs font-medium text-muted-foreground"
+                    className="story-link text-xs font-medium text-muted-foreground text-center sm:text-left"
                     type="button"
                     onClick={() =>
                       toast({
@@ -170,16 +170,16 @@ const Index = () => {
                   </button>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
+                <div className="mt-3 sm:mt-4 grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:gap-4">
+                  <div className="flex items-center gap-2 bg-primary/5 rounded-full px-3 py-1.5 border border-primary/10">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     Real-time event board
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-primary/5 rounded-full px-3 py-1.5 border border-primary/10">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     AI smart recommendations
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-primary/5 rounded-full px-3 py-1.5 border border-primary/10">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                     Faculty-grade analytics
                   </div>
@@ -187,7 +187,7 @@ const Index = () => {
               </div>
 
               {/* Hero assistant preview */}
-              <div className="mt-4 w-full max-w-xs shrink-0 rounded-2xl border border-border/70 bg-card/80 p-3 shadow-lg backdrop-blur-xl sm:mt-0">
+              <div className="mt-4 w-full max-w-xs shrink-0 rounded-xl sm:rounded-2xl border border-primary/20 bg-card/90 p-2.5 sm:p-3 shadow-lg backdrop-blur-xl sm:mt-0">
                 <div className="mb-2 flex items-center justify-between text-[0.7rem] text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <MessageCircle className="h-3 w-3 text-primary" />
@@ -226,8 +226,8 @@ const Index = () => {
           </div>
 
           {/* Highlight cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="hover-scale border-border/70 bg-card/80 shadow-sm">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            <Card className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">This week</CardTitle>
                 <CalendarDays className="h-4 w-4 text-primary" />
@@ -238,7 +238,7 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover-scale border-border/70 bg-card/80 shadow-sm">
+            <Card className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Study groups</CardTitle>
                 <Users className="h-4 w-4 text-accent" />
@@ -250,7 +250,7 @@ const Index = () => {
             </Card>
 
             <Card
-              className="hover-scale cursor-pointer border-border/70 bg-card/80 shadow-sm"
+              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl"
               onClick={() => navigate("/planner")}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -268,9 +268,9 @@ const Index = () => {
         </section>
 
         {/* Right column – streams */}
-        <aside className="w-full space-y-4 lg:w-80 lg:animate-slide-in-right">
+        <aside className="w-full space-y-3 sm:space-y-4 lg:w-80 lg:animate-slide-in-right">
           {/* Events stream */}
-          <Card className="border-border/70 bg-card/85 shadow-sm">
+          <Card className="border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle className="text-sm font-semibold">Live campus stream</CardTitle>
@@ -284,7 +284,7 @@ const Index = () => {
               <CardContent className="space-y-3 text-xs">
               <button
                 type="button"
-                className="flex w-full gap-3 rounded-xl border border-border/60 bg-background/70 p-3 text-left hover-scale"
+                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/15 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
                 onClick={() => navigate("/events")}
               >
                 <div className="mt-0.5 h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-primary/80 to-primary/40" />
@@ -310,7 +310,7 @@ const Index = () => {
 
               <button
                 type="button"
-                className="flex w-full gap-3 rounded-xl border border-border/60 bg-background/70 p-3 text-left hover-scale"
+                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/15 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
                 onClick={() => navigate("/lost-found")}
               >
                 <div className="mt-0.5 h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-accent/80 to-accent/40" />
@@ -332,7 +332,7 @@ const Index = () => {
 
               <button
                 type="button"
-                className="flex w-full gap-3 rounded-xl border border-border/60 bg-background/70 p-3 text-left hover-scale"
+                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/15 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
                 onClick={() => navigate("/qa")}
               >
                 <div className="mt-0.5 h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-amber-300/90 to-amber-500/50" />
@@ -357,7 +357,7 @@ const Index = () => {
           </Card>
 
           {/* For teachers & admins */}
-          <Card className="border-border/70 bg-card/85 shadow-sm">
+          <Card className="border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">For faculty &amp; coordinators</CardTitle>
             </CardHeader>
