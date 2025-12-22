@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Target, Clock, BookOpen } from "lucide-react";
+import { Session } from "@supabase/supabase-js";
 
 const focusOptions = [
   "DSA & problem solving",
@@ -20,6 +22,9 @@ const focusOptions = [
 
 const StudyPlannerPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [semester, setSemester] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [hoursPerWeek, setHoursPerWeek] = useState("");
@@ -28,6 +33,44 @@ const StudyPlannerPage = () => {
   const [extraContext, setExtraContext] = useState("");
   const [plan, setPlan] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setIsLoading(false);
+        if (!session) {
+          toast({
+            title: "Login required",
+            description: "Please sign in to use the Study Planner.",
+          });
+          navigate("/auth");
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   const toggleFocus = (label: string) => {
     setSelectedFocus((prev) =>
