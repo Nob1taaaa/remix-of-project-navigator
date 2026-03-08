@@ -42,13 +42,13 @@
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 210 40% 99%;
-    --sidebar-foreground: 0 0% 9%;
+    --sidebar-background: 155 30% 98%;
+    --sidebar-foreground: 160 10% 15%;
     --sidebar-primary: 161 93% 30%;
     --sidebar-primary-foreground: 151 80% 95%;
-    --sidebar-accent: 0 0% 32%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 83%;
+    --sidebar-accent: 155 30% 92%;
+    --sidebar-accent-foreground: 160 30% 20%;
+    --sidebar-border: 155 15% 82%;
     --sidebar-ring: 161 93% 30%;
 
     /* Atmosphere & effects */
