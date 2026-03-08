@@ -20,23 +20,23 @@
     --popover-foreground: 0 0% 9%;
 
     /* Brand & accents */
-    --primary: 161 93% 30%; /* clean campus blue */
+    --primary: 161 93% 30%;
     --primary-foreground: 151 80% 95%;
 
-    --secondary: 0 0% 32%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 155 30% 92%;
+    --secondary-foreground: 160 30% 20%;
 
-    --muted: 0 0% 63%;
-    --muted-foreground: 0 0% 9%;
+    --muted: 155 15% 75%;
+    --muted-foreground: 160 10% 35%;
 
-    --accent: 166 76% 96%; /* teal accent */
+    --accent: 166 76% 96%;
     --accent-foreground: 173 80% 40%;
 
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 85% 97%;
 
-    --border: 0 0% 83%;
-    --input: 0 0% 83%;
+    --border: 155 15% 82%;
+    --input: 155 15% 82%;
     --ring: 161 93% 30%;
 
     --radius: 0.75rem;
