@@ -24,7 +24,7 @@ const Footer = () => {
               <img src={logoImage} alt="Logo" className="h-8 w-8 rounded-xl bg-card p-0.5 shadow-sm object-contain" />
               <div>
                 <p className="text-sm font-semibold tracking-tight">Campus Innovation</p>
-                <p className="text-[0.65rem] text-muted-foreground">Hackathon Project</p>
+                <p className="text-[0.65rem] text-muted-foreground">Smart Campus Companion</p>
               </div>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
@@ -67,14 +67,14 @@ const Footer = () => {
               ))}
             </div>
             <p className="text-[0.65rem] text-muted-foreground/70 leading-relaxed">
-              Designed & developed as a campus innovation hackathon project showcasing full-stack capabilities.
+              Designed & developed as a campus innovation project showcasing full-stack capabilities.
             </p>
           </div>
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-2 border-t border-primary/10 pt-5 text-center">
           <p className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
-            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Campus Innovation Hackathon
+            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Campus Innovation
           </p>
           <p className="text-[0.6rem] text-muted-foreground/60">
             © {new Date().getFullYear()} Campus Innovation. All rights reserved.
