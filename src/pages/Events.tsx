@@ -66,11 +66,13 @@ const EventsPage = () => {
     } catch (error: any) { console.error("Error loading interested events:", error); }
   };
 
-  const filteredEvents = events.filter((event) => {
-    const query = search.trim().toLowerCase();
-    if (!query) return true;
-    return event.title.toLowerCase().includes(query) || event.description?.toLowerCase().includes(query) || event.location?.toLowerCase().includes(query) || event.category?.toLowerCase().includes(query);
-  });
+  const filteredEvents = events
+    .filter((event) => new Date(event.event_date) >= new Date(new Date().toDateString()))
+    .filter((event) => {
+      const query = search.trim().toLowerCase();
+      if (!query) return true;
+      return event.title.toLowerCase().includes(query) || event.description?.toLowerCase().includes(query) || event.location?.toLowerCase().includes(query) || event.category?.toLowerCase().includes(query);
+    });
 
   const handleToggleInterested = async (event: Event) => {
     if (!user) return;
