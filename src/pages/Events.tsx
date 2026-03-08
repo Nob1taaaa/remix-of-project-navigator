@@ -72,14 +72,20 @@ const EventsPage = () => {
     return event.title.toLowerCase().includes(query) || event.description?.toLowerCase().includes(query) || event.location?.toLowerCase().includes(query) || event.category?.toLowerCase().includes(query);
   });
 
-  const handleMarkInterested = async (event: Event) => {
+  const handleToggleInterested = async (event: Event) => {
     if (!user) return;
-    if (interestedEvents.has(event.id)) return;
     try {
-      const { error } = await supabase.from("event_attendees").insert({ event_id: event.id, user_id: user.id });
-      if (error) throw error;
-      setInterestedEvents((prev) => new Set(prev).add(event.id));
-      toast({ title: "Interest marked!", description: `${event.title} added to your list.` });
+      if (interestedEvents.has(event.id)) {
+        const { error } = await supabase.from("event_attendees").delete().eq("event_id", event.id).eq("user_id", user.id);
+        if (error) throw error;
+        setInterestedEvents((prev) => { const next = new Set(prev); next.delete(event.id); return next; });
+        toast({ title: "Removed interest", description: `${event.title} removed from your list.` });
+      } else {
+        const { error } = await supabase.from("event_attendees").insert({ event_id: event.id, user_id: user.id });
+        if (error) throw error;
+        setInterestedEvents((prev) => new Set(prev).add(event.id));
+        toast({ title: "Interest marked!", description: `${event.title} added to your list.` });
+      }
     } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
   };
 
