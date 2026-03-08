@@ -148,43 +148,58 @@ const Index = () => {
           {/* Highlight cards */}
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             <Card 
-              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl"
+              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl overflow-hidden"
               onClick={() => navigate("/events")}
             >
+              <div className="h-1.5 bg-gradient-to-r from-primary to-primary/50" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">This week</CardTitle>
-                <CalendarDays className="h-4 w-4 text-primary" />
+                <CardTitle className="text-xs font-semibold text-primary uppercase tracking-wider">📅 Events this week</CardTitle>
+                <CalendarDays className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">12</div>
+                <div className="text-3xl font-bold text-foreground">12</div>
                 <p className="mt-1 text-xs text-muted-foreground">live &amp; upcoming events across campus.</p>
+                <span className="mt-2 inline-flex items-center text-[0.7rem] font-semibold text-primary">
+                  View all events <ArrowRight className="ml-1 h-3 w-3" />
+                </span>
               </CardContent>
             </Card>
 
-            <Card className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
+            <Card 
+              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl overflow-hidden"
+              onClick={() => navigate("/study-groups")}
+            >
+              <div className="h-1.5 bg-gradient-to-r from-accent-foreground to-accent-foreground/50" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Study groups</CardTitle>
-                <Users className="h-4 w-4 text-accent" />
+                <CardTitle className="text-xs font-semibold text-accent-foreground uppercase tracking-wider">👥 Study groups</CardTitle>
+                <Users className="h-5 w-5 text-accent-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">8</div>
+                <div className="text-3xl font-bold text-foreground">8</div>
                 <p className="mt-1 text-xs text-muted-foreground">curated spaces for DSA, DBMS, CN &amp; more.</p>
+                <span className="mt-2 inline-flex items-center text-[0.7rem] font-semibold text-accent-foreground">
+                  Browse groups <ArrowRight className="ml-1 h-3 w-3" />
+                </span>
               </CardContent>
             </Card>
 
             <Card
-              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl"
+              className="hover-scale cursor-pointer border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl overflow-hidden"
               onClick={() => navigate("/planner")}
             >
+              <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-300" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Study &amp; placements</CardTitle>
-                <HelpCircle className="h-4 w-4 text-amber-300" />
+                <CardTitle className="text-xs font-semibold text-amber-600 uppercase tracking-wider">🎯 AI Study Planner</CardTitle>
+                <HelpCircle className="h-5 w-5 text-amber-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">Plan</div>
+                <div className="text-3xl font-bold text-foreground">Plan</div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  open an AI mentor that designs a weekly prep plan for your goals.
+                  AI mentor designs a weekly prep plan for your goals.
                 </p>
+                <span className="mt-2 inline-flex items-center text-[0.7rem] font-semibold text-amber-600">
+                  Start planning <ArrowRight className="ml-1 h-3 w-3" />
+                </span>
               </CardContent>
             </Card>
           </div>
@@ -207,49 +222,44 @@ const Index = () => {
               <CardContent className="space-y-3 text-xs">
               <button
                 type="button"
-                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/15 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
+                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/20 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
                 onClick={() => navigate("/events")}
               >
-                <div className="mt-0.5 h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-primary/80 to-primary/40" />
-                <div>
-                  <p className="text-[0.78rem] font-medium">HackNight 2025 – 8 hour overnight build</p>
-                  <p className="text-[0.7rem] text-muted-foreground">Starts today · 6:00 PM · Innovation Lab</p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <Badge
-                      variant="outline"
-                      className="border-primary/40 bg-primary/10 text-[0.65rem] text-primary"
-                    >
-                      CSE
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="border-border/70 bg-background/60 text-[0.65rem]"
-                    >
-                      Hackathon
-                    </Badge>
+                <div className="mt-0.5 h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center">
+                  <CalendarDays className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-foreground">HackNight 2025</p>
+                  <p className="text-[0.72rem] font-medium text-primary mt-0.5">8 hour overnight build</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[0.65rem] font-semibold text-primary">
+                      <CalendarDays className="h-3 w-3" /> Today · 6:00 PM
+                    </span>
+                    <span className="text-[0.65rem] text-muted-foreground">Innovation Lab</span>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <Badge className="bg-primary/15 border-primary/40 text-[0.65rem] text-primary font-semibold">CSE</Badge>
+                    <Badge variant="outline" className="border-border/70 bg-background/60 text-[0.65rem]">Hackathon</Badge>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/15 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
+                className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-2.5 sm:p-3 text-left hover-scale"
                 onClick={() => navigate("/lost-found")}
               >
-                <div className="mt-0.5 h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-accent/80 to-accent/40" />
-                <div>
-                  <p className="text-[0.78rem] font-medium">Found: ID card near Block B</p>
-                  <p className="text-[0.7rem] text-muted-foreground">
-                    AI suggests 2 possible matches based on lost posts.
-                  </p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <Badge
-                      variant="outline"
-                      className="border-accent/50 bg-accent/10 text-[0.65rem] text-accent-foreground"
-                    >
-                      Lost &amp; Found
-                    </Badge>
+                <div className="mt-0.5 h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-accent/80 to-accent/40 flex items-center justify-center">
+                  <span className="text-lg">🔍</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-primary/15 border-primary/40 text-[0.6rem] font-bold text-primary">FOUND</Badge>
+                    <p className="text-sm font-bold text-foreground">ID card near Block B</p>
                   </div>
+                  <p className="text-[0.7rem] text-muted-foreground mt-1">
+                    AI suggests <span className="font-semibold text-primary">2 possible matches</span> based on lost posts.
+                  </p>
                 </div>
               </button>
 
@@ -258,22 +268,16 @@ const Index = () => {
                 className="flex w-full gap-2.5 sm:gap-3 rounded-xl border border-primary/15 bg-primary/5 p-2.5 sm:p-3 text-left hover-scale"
                 onClick={() => navigate("/qa")}
               >
-                <div className="mt-0.5 h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-amber-300/90 to-amber-500/50" />
-                <div>
-                  <p className="text-[0.78rem] font-medium">
-                    Anonymous: "How do I balance DSA &amp; semester labs?"
-                  </p>
-                  <p className="text-[0.7rem] text-muted-foreground">
-                    4 answers · AI summary ready for quick review.
-                  </p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <Badge
-                      variant="outline"
-                      className="border-border/70 bg-background/60 text-[0.65rem]"
-                    >
-                      Q&amp;A
-                    </Badge>
+                <div className="mt-0.5 h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-amber-300/90 to-amber-500/50 flex items-center justify-center">
+                  <HelpCircle className="h-4 w-4 text-amber-800" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-foreground">"How do I balance DSA &amp; semester labs?"</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-[0.7rem] font-semibold text-primary">4 answers</span>
+                    <span className="text-[0.65rem] text-muted-foreground">· AI summary ready</span>
                   </div>
+                  <Badge variant="outline" className="mt-1 border-border/70 bg-background/60 text-[0.65rem]">Q&amp;A</Badge>
                 </div>
               </button>
             </CardContent>
