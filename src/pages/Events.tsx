@@ -199,12 +199,11 @@ const EventsPage = () => {
                   )}
                   <Button
                     size="sm"
-                    className={`h-8 rounded-full px-4 text-xs font-semibold ${interestedEvents.has(event.id) ? "bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15" : ""}`}
+                    className={`h-8 rounded-full px-4 text-xs font-semibold ${interestedEvents.has(event.id) ? "bg-primary/10 text-primary border border-primary/25 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/25" : ""}`}
                     variant={interestedEvents.has(event.id) ? "outline" : "default"}
-                    onClick={() => handleMarkInterested(event)}
-                    disabled={interestedEvents.has(event.id)}
+                    onClick={() => handleToggleInterested(event)}
                   >
-                    {interestedEvents.has(event.id) ? "✓ Interested" : <>Mark interested <ArrowRight className="ml-1 h-3 w-3" /></>}
+                    {interestedEvents.has(event.id) ? "✗ Not Interested" : <>Mark interested <ArrowRight className="ml-1 h-3 w-3" /></>}
                   </Button>
                 </div>
               </CardContent>
