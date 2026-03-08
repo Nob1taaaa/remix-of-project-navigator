@@ -100,8 +100,11 @@ const QAPage = () => {
             )}
           </ScrollArea>
 
-          {/* Quick questions */}
-          {messages.length === 0 && (
+          {/* Quick questions — always visible */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              {messages.length > 0 ? "Ask another question:" : "Frequently asked:"}
+            </p>
             <div className="flex flex-wrap gap-2">
               {quickQuestions.map((q) => (
                 <button
@@ -113,7 +116,7 @@ const QAPage = () => {
                 </button>
               ))}
             </div>
-          )}
+          </div>
 
           {/* Input */}
           <div className="space-y-2">
