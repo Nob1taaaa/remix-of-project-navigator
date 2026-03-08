@@ -17,6 +17,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [forgotMode, setForgotMode] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,6 +62,26 @@ const Auth = () => {
       toast({ title: "Welcome back!", description: "You've successfully signed in." });
     } catch (error: any) {
       toast({ title: "Error signing in", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast({ title: "Enter your email", description: "Type your email above, then click Forgot password.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast({ title: "Reset link sent!", description: "Check your email for the password reset link." });
+      setForgotMode(false);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -128,6 +149,9 @@ const Auth = () => {
                   <Button type="submit" className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-[var(--shadow-glow)] hover:shadow-lg transition-shadow" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
+                  <button type="button" onClick={() => { setForgotMode(true); handleForgotPassword(); }} className="w-full text-center text-xs text-primary hover:underline mt-1">
+                    Forgot password?
+                  </button>
                 </form>
               </TabsContent>
 

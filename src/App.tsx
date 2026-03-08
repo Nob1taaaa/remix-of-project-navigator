@@ -7,6 +7,7 @@ import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import EventsPage from "./pages/Events";
 import LostFoundPage from "./pages/LostFound";
 import StudyGroupsPage from "./pages/StudyGroups";
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Layout><Index /></Layout>} />
           <Route path="/events" element={<Layout><EventsPage /></Layout>} />
           <Route path="/lost-found" element={<Layout><LostFoundPage /></Layout>} />
