@@ -24,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Layout><Index /></Layout>} />
           <Route path="/events" element={<Layout><EventsPage /></Layout>} />
           <Route path="/lost-found" element={<Layout><LostFoundPage /></Layout>} />

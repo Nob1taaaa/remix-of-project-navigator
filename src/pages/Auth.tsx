@@ -149,6 +149,9 @@ const Auth = () => {
                   <Button type="submit" className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-[var(--shadow-glow)] hover:shadow-lg transition-shadow" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
+                  <button type="button" onClick={() => { setForgotMode(true); handleForgotPassword(); }} className="w-full text-center text-xs text-primary hover:underline mt-1">
+                    Forgot password?
+                  </button>
                 </form>
               </TabsContent>
 
