@@ -34,10 +34,10 @@ serve(async (req) => {
       );
     }
 
-    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAIApiKey) {
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) {
       return new Response(
-        JSON.stringify({ error: "OPENAI_API_KEY is not configured" }),
+        JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -73,25 +73,26 @@ Output format (use clear headings and bullet points):
 
 Tone: Encouraging but honest. Very specific and actionable.`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2048,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: `Create a personalised weekly study & placement plan.\n\n${userProfileSummary}` },
         ],
-        max_tokens: 2048,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error:", response.status, errorText);
+      console.error("Anthropic API error:", response.status, errorText);
       return new Response(
         JSON.stringify({ error: "Failed to generate study plan" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -99,7 +100,7 @@ Tone: Encouraging but honest. Very specific and actionable.`;
     }
 
     const data = await response.json();
-    let plan = data.choices?.[0]?.message?.content;
+    let plan = data?.content?.[0]?.text;
 
     if (!plan?.trim()) {
       plan = "Here is a simple starting point: aim for at least 3 focused study blocks per week (DSA, core subjects, and projects), plus 1 placement-focused block.";
