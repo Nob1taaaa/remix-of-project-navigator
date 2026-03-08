@@ -241,31 +241,37 @@ const LostFoundPage = () => {
               const isLost = post.type === "lost";
 
               return (
-                <Card key={post.id} className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl">
+                <Card key={post.id} className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-xl sm:rounded-2xl overflow-hidden">
+                  {/* Type color strip */}
+                  <div className={`h-1.5 ${isLost ? "bg-gradient-to-r from-destructive/80 to-destructive/40" : "bg-gradient-to-r from-primary/80 to-primary/40"}`} />
                   <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
-                    <CardTitle className="text-xs sm:text-sm font-semibold">{post.title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`text-[0.7rem] font-bold px-2.5 py-0.5 ${
+                        isLost ? "bg-destructive/15 border-destructive/40 text-destructive" : "bg-primary/15 border-primary/40 text-primary"
+                      }`}>
+                        {isLost ? "🔴 LOST" : "🟢 FOUND"}
+                      </Badge>
+                      <CardTitle className="text-sm sm:text-base font-bold text-foreground">{post.title}</CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2.5 text-xs px-3 sm:px-4 pb-3 sm:pb-4">
                     <div className="flex gap-2.5 sm:gap-3">
-                      <div className={`h-12 w-12 flex-shrink-0 rounded-lg border-2 border-primary/30 flex items-center justify-center ${
-                        isLost ? "bg-gradient-to-br from-destructive/15 to-destructive/5" : "bg-gradient-to-br from-primary/20 to-primary/5"
+                      <div className={`h-12 w-12 flex-shrink-0 rounded-lg border-2 flex items-center justify-center ${
+                        isLost ? "border-destructive/30 bg-gradient-to-br from-destructive/15 to-destructive/5" : "border-primary/30 bg-gradient-to-br from-primary/20 to-primary/5"
                       }`}>
                         <ArchiveRestore className="h-5 w-5 text-primary/60" />
                       </div>
                       <p className="text-muted-foreground text-xs leading-relaxed">{post.description}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-                      <span className="inline-flex items-center gap-1 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/30 border border-accent-foreground/20 px-2.5 py-1 text-[0.72rem] font-medium text-accent-foreground">
                         <MapPin className="h-3.5 w-3.5" /> {post.location}
                       </span>
                       {post.approximate_time && (
-                        <span className="text-xs">· {post.approximate_time}</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2 py-1 text-[0.7rem] font-medium text-primary">
+                          🕐 {post.approximate_time}
+                        </span>
                       )}
-                      <Badge variant="outline" className={`text-[0.65rem] ${
-                        isLost ? "border-destructive/40 bg-destructive/10 text-foreground" : "border-primary/40 bg-primary/10 text-foreground"
-                      }`}>
-                        {isLost ? "Lost" : "Found"}
-                      </Badge>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
