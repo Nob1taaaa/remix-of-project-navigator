@@ -115,13 +115,33 @@ const LostFoundPage = () => {
   return (
     <main className="mx-auto max-w-6xl px-3 pb-16 pt-5 sm:px-4 sm:pt-6 md:px-6 md:pt-8">
       <PageHeader icon="📍" title="Lost & Found" subtitle="A central board to reconnect people with their lost items across campus.">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <Button size="sm" className="h-8 rounded-full text-xs px-4 bg-gradient-to-r from-destructive/90 to-destructive/70" onClick={() => setType("lost")}>
+        <div className="relative flex items-center rounded-full bg-muted/60 border border-primary/12 p-0.5 text-xs">
+          <div
+            className="absolute top-0.5 bottom-0.5 rounded-full transition-all duration-300 ease-in-out"
+            style={{
+              width: 'calc(50% - 2px)',
+              left: type === "lost" ? '2px' : 'calc(50%)',
+              background: type === "lost"
+                ? 'linear-gradient(to right, hsl(var(--destructive) / 0.9), hsl(var(--destructive) / 0.7))'
+                : 'linear-gradient(to right, hsl(var(--primary) / 0.8), hsl(var(--primary) / 0.6))',
+            }}
+          />
+          <button
+            onClick={() => setType("lost")}
+            className={`relative z-10 h-8 rounded-full px-4 font-medium transition-colors duration-200 ${
+              type === "lost" ? "text-destructive-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
             🔴 I lost something
-          </Button>
-          <Button size="sm" variant="outline" className="h-8 rounded-full border-primary/20 bg-primary/5 text-foreground hover:bg-primary/10 text-xs px-4" onClick={() => setType("found")}>
+          </button>
+          <button
+            onClick={() => setType("found")}
+            className={`relative z-10 h-8 rounded-full px-4 font-medium transition-colors duration-200 ${
+              type === "found" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
             🟢 I found something
-          </Button>
+          </button>
         </div>
       </PageHeader>
 
