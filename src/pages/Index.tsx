@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Bell, MessageCircle, Sparkles, Users, CalendarDays, HelpCircle, Search, Compass, LogOut } from "lucide-react";
+import { ArrowRight, MessageCircle, Users, CalendarDays, HelpCircle, Compass } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import logoImage from "@/assets/logo.png";
 
 const Index = () => {
   const { toast } = useToast();
@@ -28,10 +27,6 @@ const Index = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You've been signed out successfully.",
-    });
   };
 
   const handleAiClick = () => {
@@ -50,85 +45,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-foreground">
-      {/* Top navigation */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <img 
-              src={logoImage} 
-              alt="Campus Innovation Hackathon Logo" 
-              className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain bg-white/90 p-1 shadow-sm"
-            />
-            <div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="text-xs font-semibold tracking-tight sm:text-sm md:text-base">Campus Innovation</span>
-                <Badge
-                  variant="secondary"
-                  className="border-primary/20 bg-primary/10 text-[0.55rem] sm:text-[0.65rem] uppercase tracking-wide text-foreground"
-                >
-                  Hackathon
-                </Badge>
-              </div>
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                Innovate. Create. Code.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              className="hidden items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-foreground shadow-sm transition-colors hover:bg-primary/10 md:flex"
-              type="button"
-              onClick={() =>
-                toast({
-                  title: "Global search (demo)",
-                  description: "Later this can filter events, groups, and Q&A from the database.",
-                })
-              }
-            >
-              <Search className="mr-1 h-3.5 w-3.5 text-primary" />
-              <span>Search events, groups, questions…</span>
-            </button>
-            <Button
-              size="icon"
-              variant="outline"
-              className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10"
-              type="button"
-              onClick={handleNotificationsClick}
-            >
-              <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground" />
-              <span className="absolute right-1 top-1 inline-flex h-1.5 w-1.5 rounded-full bg-primary pulse" />
-            </Button>
-            {user ? (
-              <>
-                <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/70 text-xs font-semibold text-primary-foreground md:flex">
-                  {user.email?.charAt(0).toUpperCase()}
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-full hover:bg-primary/10"
-                  onClick={handleSignOut}
-                  title="Sign out"
-                >
-                  <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate("/auth")}
-                className="text-[0.65rem] sm:text-xs h-7 sm:h-8 px-2.5 sm:px-3 rounded-full border-primary/20 bg-primary/5 text-foreground hover:bg-primary/10"
-              >
-                Sign In
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
-
+    <div className="text-foreground">
       {/* Main content */}
       <main className="mx-auto flex max-w-6xl flex-col gap-5 px-3 pb-24 pt-4 sm:gap-6 sm:px-4 md:gap-8 md:px-6 md:pt-10 lg:flex-row">
         {/* Left column – hero & highlights */}

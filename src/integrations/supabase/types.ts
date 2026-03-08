@@ -100,6 +100,45 @@ export type Database = {
           },
         ]
       }
+      lost_found_posts: {
+        Row: {
+          approximate_time: string | null
+          created_at: string
+          description: string
+          id: string
+          is_resolved: boolean
+          location: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approximate_time?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          is_resolved?: boolean
+          location: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approximate_time?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_resolved?: boolean
+          location?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -121,6 +160,71 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      study_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_groups: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          max_members: number | null
+          schedule: string | null
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          max_members?: number | null
+          schedule?: string | null
+          subject?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          max_members?: number | null
+          schedule?: string | null
+          subject?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
