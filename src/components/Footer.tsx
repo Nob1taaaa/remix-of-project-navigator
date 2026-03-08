@@ -24,7 +24,7 @@ const Footer = () => {
               <img src={logoImage} alt="Logo" className="h-8 w-8 rounded-xl bg-card p-0.5 shadow-sm object-contain" />
               <div>
                 <p className="text-sm font-semibold tracking-tight">Campus Innovation</p>
-                <p className="text-[0.65rem] text-muted-foreground">Hackathon Project</p>
+                <p className="text-[0.65rem] text-muted-foreground">Smart Campus Companion</p>
               </div>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
