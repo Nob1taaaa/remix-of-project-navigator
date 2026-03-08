@@ -143,7 +143,7 @@ const StudyPlannerPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <ScrollArea className="h-[360px] rounded-xl border border-primary/10 bg-background/40 p-4 text-sm">
+            <ScrollArea className="min-h-[360px] max-h-[70vh] rounded-xl border border-primary/10 bg-background/40 p-4 text-sm">
               {plan ? (
                 <article className="prose prose-sm max-w-none dark:prose-invert">
                   {plan.split("\n").map((line, idx) => (
