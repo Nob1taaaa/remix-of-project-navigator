@@ -41,48 +41,47 @@ const QAPage = () => {
   ];
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 md:px-6 md:pt-8">
+    <main className="mx-auto max-w-3xl px-2 pb-20 pt-4 sm:px-4 sm:pt-6 md:px-6 md:pt-8">
       <PageHeader
         icon="❓"
         title="Anonymous Q&A"
         subtitle="Ask anything about academics, careers, or campus life. The AI assistant gives concise, student-friendly answers."
       />
 
-      {/* AI Chat — the main feature */}
       <Card className="border-primary/15 bg-card/80 backdrop-blur-sm shadow-md rounded-2xl overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-primary to-primary/40" />
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+        <CardHeader className="px-3 pb-2 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-bold">
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0">
+              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary-foreground" />
             </div>
             AI Campus Assistant
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <ScrollArea className="h-72 sm:h-80 rounded-xl border border-primary/10 bg-background/50 p-4">
+        <CardContent className="space-y-3 px-3 sm:px-6 sm:space-y-4">
+          <ScrollArea className="h-56 sm:h-72 md:h-80 rounded-xl border border-primary/10 bg-background/50 p-3 sm:p-4">
             {messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
-                <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center">
-                  <MessageCircle className="h-6 w-6 text-primary/40" />
+              <div className="flex h-full flex-col items-center justify-center gap-2 sm:gap-3 text-center text-muted-foreground">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-primary/8 flex items-center justify-center">
+                  <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary/40" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Ask me anything!</p>
-                  <p className="text-xs mt-1 max-w-sm">I can help with academics, career guidance, campus life, study tips, and more.</p>
+                  <p className="text-[0.7rem] sm:text-xs mt-1 max-w-sm">I can help with academics, career guidance, campus life, study tips, and more.</p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 {messages.map((m, idx) => (
                   <div key={idx} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[0.8rem] sm:text-sm leading-relaxed ${
                         m.role === "user"
                           ? "bg-primary text-primary-foreground rounded-br-sm"
                           : "bg-secondary/70 text-secondary-foreground rounded-bl-sm"
                       }`}
                     >
-                      <span className="block text-[0.65rem] font-semibold opacity-60 mb-0.5">
+                      <span className="block text-[0.6rem] sm:text-[0.65rem] font-semibold opacity-60 mb-0.5">
                         {m.role === "user" ? "You" : "AI Assistant"}
                       </span>
                       {m.content}
@@ -91,7 +90,7 @@ const QAPage = () => {
                 ))}
                 {isSending && (
                   <div className="flex justify-start">
-                    <div className="rounded-2xl rounded-bl-sm bg-secondary/70 px-4 py-2.5 text-sm text-muted-foreground animate-pulse">
+                    <div className="rounded-2xl rounded-bl-sm bg-secondary/70 px-3 py-2 sm:px-4 sm:py-2.5 text-[0.8rem] sm:text-sm text-muted-foreground animate-pulse">
                       Thinking...
                     </div>
                   </div>
@@ -100,17 +99,17 @@ const QAPage = () => {
             )}
           </ScrollArea>
 
-          {/* Quick questions — always visible */}
+          {/* Quick questions */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">
+            <p className="text-[0.65rem] sm:text-xs font-medium text-muted-foreground mb-1.5 sm:mb-2">
               {messages.length > 0 ? "Ask another question:" : "Frequently asked:"}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {quickQuestions.map((q) => (
                 <button
                   key={q}
                   onClick={() => { setInput(q); }}
-                  className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors"
+                  className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[0.65rem] sm:text-xs text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors"
                 >
                   {q}
                 </button>
@@ -119,7 +118,7 @@ const QAPage = () => {
           </div>
 
           {/* Input */}
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -130,13 +129,13 @@ const QAPage = () => {
                 }
               }}
               placeholder="Type your question here..."
-              className="min-h-[80px] resize-none text-sm rounded-xl border-primary/15"
+              className="min-h-[60px] sm:min-h-[80px] resize-none text-[0.8rem] sm:text-sm rounded-xl border-primary/15"
             />
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Press Enter to send</p>
+              <p className="text-[0.6rem] sm:text-xs text-muted-foreground hidden sm:block">Press Enter to send</p>
               <Button
                 size="sm"
-                className="h-9 rounded-full px-5 text-sm"
+                className="h-8 sm:h-9 rounded-full px-4 sm:px-5 text-xs sm:text-sm ml-auto"
                 disabled={isSending || !input.trim()}
                 onClick={sendMessage}
               >
