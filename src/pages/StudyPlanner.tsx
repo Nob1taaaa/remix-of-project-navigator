@@ -73,7 +73,7 @@ const StudyPlannerPage = () => {
         </Badge>
       </PageHeader>
 
-      <section className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)]">
+      <section className="grid gap-5 md:grid-cols-1">
         <Card className="border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-primary to-accent-foreground/50" />
           <CardHeader className="pb-3">
@@ -143,7 +143,7 @@ const StudyPlannerPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <ScrollArea className="h-[360px] rounded-xl border border-primary/10 bg-background/40 p-4 text-sm">
+            <ScrollArea className="min-h-[360px] max-h-[70vh] rounded-xl border border-primary/10 bg-background/40 p-4 text-sm">
               {plan ? (
                 <article className="prose prose-sm max-w-none dark:prose-invert">
                   {plan.split("\n").map((line, idx) => (
