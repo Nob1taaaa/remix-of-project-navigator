@@ -312,15 +312,6 @@ const EventsPage = () => {
           <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1">
             <CalendarDays className="h-3.5 w-3.5" /> Total events: {events.length}
           </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleSignOut}
-            className="h-7 rounded-full px-3 text-[0.7rem]"
-          >
-            <LogOut className="h-3.5 w-3.5 mr-1" />
-            Sign Out
-          </Button>
         </div>
       </header>
 
