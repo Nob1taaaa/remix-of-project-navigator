@@ -415,9 +415,9 @@ const EventsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex -space-x-2">
-                  <div className="h-6 w-6 rounded-full bg-secondary" />
-                  <div className="h-6 w-6 rounded-full bg-secondary" />
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[0.6rem]">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 border border-primary/30" />
+                  <div className="h-6 w-6 rounded-full bg-accent/40 border border-primary/30" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 border border-primary/30 text-[0.6rem] text-foreground">
                     +18
                   </div>
                 </div>
