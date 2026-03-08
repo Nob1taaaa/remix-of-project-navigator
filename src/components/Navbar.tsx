@@ -51,18 +51,12 @@ const Navbar = () => {
         >
           <img
             src={logoImage}
-            alt="Campus Innovation Hackathon Logo"
+            alt="Campus Innovation Logo"
             className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain bg-white/90 p-0.5 shadow-sm"
           />
           <div className="hidden sm:block">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold tracking-tight sm:text-sm">Campus Innovation</span>
-              <Badge
-                variant="secondary"
-                className="border-primary/20 bg-primary/10 text-[0.55rem] uppercase tracking-wide text-foreground"
-              >
-                Hackathon
-              </Badge>
             </div>
             <p className="hidden text-xs text-muted-foreground md:block">
               Innovate. Create. Code.

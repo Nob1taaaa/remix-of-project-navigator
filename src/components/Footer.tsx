@@ -74,7 +74,7 @@ const Footer = () => {
 
         <div className="mt-8 flex flex-col items-center gap-2 border-t border-primary/10 pt-5 text-center">
           <p className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
-            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Campus Innovation Hackathon
+            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Campus Innovation
           </p>
           <p className="text-[0.6rem] text-muted-foreground/60">
             © {new Date().getFullYear()} Campus Innovation. All rights reserved.

@@ -101,15 +101,15 @@ const Auth = () => {
             <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
             <img
               src={logoImage}
-              alt="Campus Innovation Hackathon"
+              alt="Campus Innovation"
               className="relative h-16 w-16 rounded-2xl bg-card/90 p-1.5 shadow-lg object-contain"
             />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
-              Campus Innovation{" "}
+              Campus{" "}
               <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">
-                Hackathon
+                Innovation
               </span>
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
