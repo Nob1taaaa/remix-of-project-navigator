@@ -7,6 +7,7 @@ import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import EventsPage from "./pages/Events";
 import LostFoundPage from "./pages/LostFound";
 import StudyGroupsPage from "./pages/StudyGroups";
