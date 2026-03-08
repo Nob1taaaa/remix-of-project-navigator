@@ -377,30 +377,29 @@ const EventsPage = () => {
       {/* Main events grid */}
       <section className="grid gap-4 md:grid-cols-2">
         {filteredEvents.map((event) => (
-          <Card key={event.id} className="hover-scale border-border/70 bg-card/80 shadow-sm">
+          <Card key={event.id} className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-2xl overflow-hidden">
+            {/* Category color strip */}
+            <div className="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-accent" />
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="text-sm font-semibold">{event.title}</CardTitle>
-                  <p className="mt-1 text-xs text-muted-foreground">{event.description}</p>
+                  <CardTitle className="text-base font-bold text-foreground">{event.title}</CardTitle>
+                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{event.description}</p>
                 </div>
                 {event.category && (
-                  <Badge
-                    variant="outline"
-                    className="border-primary/40 bg-primary/10 text-[0.65rem] text-primary"
-                  >
+                  <Badge className="bg-primary/15 border-primary/40 text-primary text-[0.7rem] font-semibold px-2.5 py-0.5">
                     {event.category}
                   </Badge>
                 )}
               </div>
             </CardHeader>
             <CardContent className="space-y-3 text-xs">
-              <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-[0.72rem] font-semibold text-primary">
                   <CalendarDays className="h-3.5 w-3.5" /> 
-                  {new Date(event.event_date).toLocaleDateString()}
+                  {new Date(event.event_date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                 </span>
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/30 border border-accent-foreground/20 px-2.5 py-1 text-[0.72rem] font-medium text-accent-foreground">
                   <MapPin className="h-3.5 w-3.5" /> {event.location}
                 </span>
               </div>
@@ -408,7 +407,7 @@ const EventsPage = () => {
                 <div className="flex -space-x-2">
                   <div className="h-6 w-6 rounded-full bg-primary/20 border border-primary/30" />
                   <div className="h-6 w-6 rounded-full bg-accent/40 border border-primary/30" />
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 border border-primary/30 text-[0.6rem] text-foreground">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 border border-primary/30 text-[0.6rem] text-foreground font-medium">
                     +18
                   </div>
                 </div>
@@ -425,12 +424,12 @@ const EventsPage = () => {
                   )}
                   <Button
                     size="sm"
-                    className="h-7 rounded-full px-3 text-[0.7rem]"
+                    className="h-7 rounded-full px-3 text-[0.7rem] font-semibold"
                     onClick={() => handleMarkInterested(event)}
                     disabled={interestedEvents.has(event.id)}
                   >
-                    {interestedEvents.has(event.id) ? "Already interested" : "Mark as interested"}
-                    <ArrowRight className="ml-1.5 h-3 w-3" />
+                    {interestedEvents.has(event.id) ? "✓ Interested" : "Mark as interested"}
+                    {!interestedEvents.has(event.id) && <ArrowRight className="ml-1.5 h-3 w-3" />}
                   </Button>
                 </div>
               </div>
