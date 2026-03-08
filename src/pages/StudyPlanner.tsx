@@ -73,7 +73,7 @@ const StudyPlannerPage = () => {
         </Badge>
       </PageHeader>
 
-      <section className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)]">
+      <section className="grid gap-5 md:grid-cols-1">
         <Card className="border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-primary to-accent-foreground/50" />
           <CardHeader className="pb-3">
