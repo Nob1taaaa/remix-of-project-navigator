@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -13,10 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check - verify user is logged in
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.warn("Request rejected: No authorization header provided");
       return new Response(
         JSON.stringify({ error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -31,33 +28,23 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
-      console.warn("Request rejected: Invalid or expired authentication token");
       return new Response(
         JSON.stringify({ error: "Invalid or expired authentication token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[${new Date().toISOString()}] study-planner invoked by user: ${user.id}`);
-
-    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAIApiKey) {
-      console.error("OPENAI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
       return new Response(
-        JSON.stringify({ error: "OPENAI_API_KEY is not configured" }),
+        JSON.stringify({ error: "AI service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const body = await req.json();
-    const {
-      semester,
-      targetRole,
-      hoursPerWeek,
-      focusAreas,
-      upcomingExams,
-      extraContext,
-    } = body ?? {};
+    const { semester, targetRole, hoursPerWeek, focusAreas, upcomingExams, extraContext } = body ?? {};
 
     const userProfileSummary = `
 Student profile:
@@ -75,45 +62,46 @@ Constraints:
 - The student is in an Indian engineering college context (CSE/IT).
 - They usually have labs, internal tests, and project work.
 - Your plan must be realistic for the given "hours per week" in the profile.
-- If hours are very low (\<= 5), give a tiny but still helpful plan instead of overloading them.
+- If hours are very low (<= 5), give a tiny but still helpful plan instead of overloading them.
 - Do not exceed the approximate total hours they mentioned by more than 20%.
 - Prefer evening / early-morning slots on weekdays and flexible slots on weekends.
 
 Output format (use clear headings and bullet points):
 1) "Overview" – 3-6 lines summarising the main strategy.
-2) "Weekly timetable" – for each day Mon–Sun, give 2-4 bullet points with concrete time ranges (e.g. 7–9 pm) and specific tasks (topics, practice type).
+2) "Weekly timetable" – for each day Mon–Sun, give 2-4 bullet points with concrete time ranges (e.g. 7–9 pm) and specific tasks.
 3) "Non‑negotiable habits" – 3–6 short bullets about daily/weekly habits.
 4) "Next 4 weeks milestones" – 4–8 bullets with measurable, realistic goals.
 
-Tone:
-- Encouraging but honest about trade-offs.
-- Very specific and actionable (mention topics, problem types, and task categories; not brand-name courses).
-- Avoid generic motivational quotes and avoid repeating the same advice in many lines.
+Tone: Encouraging but honest. Very specific and actionable.`;
 
-Always base your plan on the student profile given below.`;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-mini-2025-08-07",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Create a personalised weekly study & placement plan.\n\n${userProfileSummary}`,
-          },
+          { role: "user", content: `Create a personalised weekly study & placement plan.\n\n${userProfileSummary}` },
         ],
-        max_completion_tokens: 2048,
       }),
     });
 
+    if (response.status === 429) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (response.status === 402) {
+      return new Response(JSON.stringify({ error: "AI usage limit reached." }), {
+        status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error for study-planner:", response.status, errorText);
+      console.error("AI gateway error:", response.status, errorText);
       return new Response(
         JSON.stringify({ error: "Failed to generate study plan" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -123,22 +111,16 @@ Always base your plan on the student profile given below.`;
     const data = await response.json();
     let plan = data.choices?.[0]?.message?.content;
 
-    if (!plan || !plan.trim()) {
-      console.error("No plan content returned from OpenAI", data);
-      // Fall back to a simple text so the UI still shows something
-      plan =
-        "Here is a simple starting point: aim for at least 3 focused study blocks per week (DSA, core subjects, and projects), " +
-        "plus 1 placement-focused block for resume, mock interviews, or previous year questions. Adjust the load based on your semester.";
+    if (!plan?.trim()) {
+      plan = "Here is a simple starting point: aim for at least 3 focused study blocks per week (DSA, core subjects, and projects), plus 1 placement-focused block.";
     }
 
-    plan = plan.trim();
-
-    return new Response(JSON.stringify({ plan }), {
+    return new Response(JSON.stringify({ plan: plan.trim() }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error in study-planner function:", error);
+    console.error("study-planner error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },

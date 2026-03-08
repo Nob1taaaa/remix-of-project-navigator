@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -18,10 +17,8 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check - verify user is logged in
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.warn("Request rejected: No authorization header provided");
       return new Response(
         JSON.stringify({ error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -36,19 +33,16 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
-      console.warn("Request rejected: Invalid or expired authentication token");
       return new Response(
         JSON.stringify({ error: "Invalid or expired authentication token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[${new Date().toISOString()}] qa-assistant invoked by user: ${user.id}`);
-
-    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAIApiKey) {
-      console.error("OPENAI_API_KEY is not set");
-      return new Response(JSON.stringify({ error: "OPENAI_API_KEY is not configured" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
+      return new Response(JSON.stringify({ error: "AI service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -69,53 +63,52 @@ serve(async (req) => {
       "Avoid writing very long essays; focus on 3-6 key points and concrete next steps. " +
       "If the question is unsafe or outside your scope, say that briefly and suggest a safe alternative.";
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-mini-2025-08-07",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages.map((m) => ({ role: m.role, content: m.content })),
         ],
-        max_completion_tokens: 2048,
       }),
     });
 
+    if (response.status === 429) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (response.status === 402) {
+      return new Response(JSON.stringify({ error: "AI usage limit reached." }), {
+        status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error:", response.status, errorText);
+      console.error("AI gateway error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "AI provider error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await response.json();
     const rawContent: string | undefined = data?.choices?.[0]?.message?.content;
-    const assistantMessage = rawContent && rawContent.trim().length > 0
-      ? rawContent.trim()
-      : "I couldn't generate an answer right now. Please try rephrasing your question or ask about a different topic.";
+    const assistantMessage = rawContent?.trim() || "I couldn't generate an answer right now. Please try rephrasing your question.";
 
-    if (!rawContent || rawContent.trim().length === 0) {
-      console.warn("OpenAI returned empty content, sending fallback message.", JSON.stringify(data));
-    }
- 
     return new Response(JSON.stringify({ assistantMessage }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("qa-assistant function error:", error);
+    console.error("qa-assistant error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
