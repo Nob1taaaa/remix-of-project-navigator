@@ -1,13 +1,194 @@
-import { useState } from "react";
-import { Users, Clock, GraduationCap, Sparkles, Activity } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Users, Clock, GraduationCap, Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface StudyGroup {
+  id: string;
+  creator_id: string;
+  title: string;
+  description: string | null;
+  subject: string;
+  schedule: string | null;
+  max_members: number | null;
+  created_at: string;
+}
 
 const StudyGroupsPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [groups, setGroups] = useState<StudyGroup[]>([]);
+  const [joinedGroups, setJoinedGroups] = useState<Set<string>>(new Set());
+  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
   const [tab, setTab] = useState<"all" | "dsa" | "dbms" | "others">("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", subject: "", schedule: "", max_members: "10" });
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) navigate("/auth");
+      else setUser(session.user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) navigate("/auth");
+      else setUser(session.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (user) {
+      loadGroups();
+      loadJoinedGroups();
+    }
+  }, [user]);
+
+  const loadGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("study_groups")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGroups(data || []);
+
+      // Load member counts
+      if (data && data.length > 0) {
+        const { data: members, error: membersError } = await supabase
+          .from("study_group_members")
+          .select("group_id");
+
+        if (!membersError && members) {
+          const counts: Record<string, number> = {};
+          members.forEach((m) => {
+            counts[m.group_id] = (counts[m.group_id] || 0) + 1;
+          });
+          setMemberCounts(counts);
+        }
+      }
+    } catch (error: any) {
+      toast({ title: "Error loading groups", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadJoinedGroups = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("study_group_members")
+      .select("group_id")
+      .eq("user_id", user.id);
+
+    if (data) {
+      setJoinedGroups(new Set(data.map((d) => d.group_id)));
+    }
+  };
+
+  const handleJoinGroup = async (groupId: string) => {
+    if (!user) return;
+
+    if (joinedGroups.has(groupId)) {
+      // Leave group
+      const { error } = await supabase
+        .from("study_group_members")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      setJoinedGroups((prev) => { const n = new Set(prev); n.delete(groupId); return n; });
+      setMemberCounts((prev) => ({ ...prev, [groupId]: Math.max(0, (prev[groupId] || 1) - 1) }));
+      toast({ title: "Left group" });
+    } else {
+      // Join group
+      const { error } = await supabase
+        .from("study_group_members")
+        .insert({ group_id: groupId, user_id: user.id });
+
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      setJoinedGroups((prev) => new Set(prev).add(groupId));
+      setMemberCounts((prev) => ({ ...prev, [groupId]: (prev[groupId] || 0) + 1 }));
+      toast({ title: "Joined group!" });
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!user || !form.title.trim() || !form.subject.trim()) {
+      toast({ title: "Missing fields", description: "Title and subject are required.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("study_groups")
+        .insert({
+          creator_id: user.id,
+          title: form.title.trim(),
+          description: form.description.trim() || null,
+          subject: form.subject.trim(),
+          schedule: form.schedule.trim() || null,
+          max_members: parseInt(form.max_members) || 10,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setGroups((prev) => [data, ...prev]);
+      setIsCreateOpen(false);
+      setForm({ title: "", description: "", subject: "", schedule: "", max_members: "10" });
+      toast({ title: "Group created!" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    const { error } = await supabase.from("study_groups").delete().eq("id", groupId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+    toast({ title: "Group deleted" });
+  };
+
+  const filteredGroups = groups.filter((g) => {
+    if (tab === "all") return true;
+    if (tab === "dsa") return g.subject.toLowerCase().includes("dsa");
+    if (tab === "dbms") return g.subject.toLowerCase().includes("dbms");
+    return !g.subject.toLowerCase().includes("dsa") && !g.subject.toLowerCase().includes("dbms");
+  });
 
   const Tab = ({ id, label }: { id: "all" | "dsa" | "dbms" | "others"; label: string }) => (
     <button
@@ -16,12 +197,20 @@ const StudyGroupsPage = () => {
       className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[0.7rem] transition-colors ${
         tab === id
           ? "bg-primary text-primary-foreground"
-          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+          : "bg-primary/10 text-foreground hover:bg-primary/20 border border-primary/20"
       }`}
     >
       {label}
     </button>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 md:px-6">
@@ -35,164 +224,157 @@ const StudyGroupsPage = () => {
         <Button
           size="sm"
           className="h-8 rounded-full"
-          onClick={() => toast({ title: "Create group (demo)", description: "Later this opens a form and saves to DB." })}
+          onClick={() => setIsCreateOpen(true)}
         >
-          + Create study group
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          Create study group
         </Button>
       </header>
 
-      {/* Subject tabs + AI helper */}
-      <section className="mb-6 flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 text-xs md:flex-row md:items-center md:justify-between md:p-4">
+      {/* Tabs */}
+      <section className="mb-6 flex flex-col gap-3 rounded-2xl border border-primary/20 bg-card/90 p-3 text-xs md:flex-row md:items-center md:justify-between md:p-4">
         <div className="flex flex-wrap items-center gap-2">
           <Tab id="all" label="All" />
           <Tab id="dsa" label="DSA" />
           <Tab id="dbms" label="DBMS" />
           <Tab id="others" label="Others" />
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-secondary/70 px-3 py-2 text-[0.7rem] text-secondary-foreground">
+        <div className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 px-3 py-2 text-[0.7rem] text-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          <span>
-            AI can later suggest ideal groups based on subjects you struggle with and upcoming exams.
-          </span>
+          <span>AI can suggest ideal groups based on your subjects and upcoming exams.</span>
         </div>
       </section>
 
+      {/* Groups grid */}
       <section className="grid gap-4 md:grid-cols-2">
-        <Card className="hover-scale border-border/70 bg-card/80 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-sm font-semibold">DSA Prep – Evening batch</CardTitle>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Daily practice for arrays, trees, and dynamic programming with timed contests.
-                </p>
-              </div>
-              <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[0.65rem] text-primary">
-                6 / 8 seats
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs">
-            <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" /> 7:00 – 8:30 PM · Mon, Wed, Fri
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" /> 3rd year CSE
-              </span>
-            </div>
-            <Button
-              size="sm"
-              className="h-8 rounded-full text-[0.7rem]"
-              onClick={() =>
-                toast({
-                  title: "Join group (demo)",
-                  description: "In the full version, this links your user ID to this group in a join table.",
-                })
-              }
-            >
-              Request to join
-            </Button>
-          </CardContent>
-        </Card>
+        {filteredGroups.length === 0 ? (
+          <Card className="border-primary/20 bg-card/90 rounded-2xl md:col-span-2">
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+              No study groups yet. Create the first one!
+            </CardContent>
+          </Card>
+        ) : (
+          filteredGroups.map((group) => {
+            const count = memberCounts[group.id] || 0;
+            const isJoined = joinedGroups.has(group.id);
+            const isCreator = group.creator_id === user?.id;
 
-        <Card className="hover-scale border-border/70 bg-card/80 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-sm font-semibold">DBMS Exam Sprint</CardTitle>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  7-day revision plan with previous year questions and viva-style practice.
-                </p>
-              </div>
-              <Badge variant="outline" className="border-border/80 bg-secondary text-[0.65rem]">
-                Open
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs">
-            <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <GraduationCap className="h-3.5 w-3.5" /> Mixed branches
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" /> 12 members
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 rounded-full text-[0.7rem]"
-              onClick={() =>
-                toast({
-                  title: "View syllabus (demo)",
-                  description: "Later this can fetch a syllabus/plan from the database or AI-generated outline.",
-                })
-              }
-            >
-              View plan
-            </Button>
-          </CardContent>
-        </Card>
+            return (
+              <Card key={group.id} className="hover-scale border-primary/20 bg-card/90 shadow-sm rounded-2xl">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-sm font-semibold">{group.title}</CardTitle>
+                      {group.description && (
+                        <p className="mt-1 text-xs text-muted-foreground">{group.description}</p>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[0.65rem] text-foreground">
+                      {count} / {group.max_members || 10}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <GraduationCap className="h-3.5 w-3.5" /> {group.subject}
+                    </span>
+                    {group.schedule && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" /> {group.schedule}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" /> {count} members
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={isJoined ? "outline" : "default"}
+                      className="h-8 rounded-full text-[0.7rem]"
+                      onClick={() => handleJoinGroup(group.id)}
+                    >
+                      {isJoined ? "Leave group" : "Join group"}
+                    </Button>
+                    {isCreator && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full text-[0.7rem] border-destructive/30 text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteGroup(group.id)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </section>
 
-      {/* Timeline + AI explainer */}
-      <section className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <Card className="border-border/70 bg-card/80 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Activity className="h-4 w-4" />
-              Study rhythm timeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs">
-            <div className="relative pl-4">
-              <div className="absolute left-1 top-0 h-full w-px bg-border/80" />
-              <div className="relative mb-3 flex flex-col gap-0.5">
-                <span className="absolute -left-1 top-1 h-2 w-2 rounded-full bg-primary" />
-                <p className="text-[0.78rem] font-medium">DSA group finished tree problems sprint</p>
-                <p className="text-[0.7rem] text-muted-foreground">Yesterday · 2 contests completed</p>
+      {/* Create Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create a study group</DialogTitle>
+            <DialogDescription>Set up a new study group for your campus mates.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Group title *</Label>
+              <Input
+                placeholder="e.g. DSA Prep – Evening batch"
+                value={form.title}
+                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Subject *</Label>
+              <Input
+                placeholder="e.g. DSA, DBMS, CN"
+                value={form.subject}
+                onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Description</Label>
+              <Textarea
+                placeholder="What will you study? Any prerequisites?"
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Schedule</Label>
+                <Input
+                  placeholder="e.g. Mon, Wed, Fri 7 PM"
+                  value={form.schedule}
+                  onChange={(e) => setForm((p) => ({ ...p, schedule: e.target.value }))}
+                />
               </div>
-              <div className="relative mb-3 flex flex-col gap-0.5">
-                <span className="absolute -left-1 top-1 h-2 w-2 rounded-full bg-accent" />
-                <p className="text-[0.78rem] font-medium">New DBMS crash course group created</p>
-                <p className="text-[0.7rem] text-muted-foreground">Today · 7-day plan</p>
-              </div>
-              <div className="relative flex flex-col gap-0.5">
-                <span className="absolute -left-1 top-1 h-2 w-2 rounded-full bg-emerald-400" />
-                <p className="text-[0.78rem] font-medium">Evening batch reached full capacity</p>
-                <p className="text-[0.7rem] text-muted-foreground">In 30 minutes · 8 / 8 members</p>
+              <div className="grid gap-2">
+                <Label>Max members</Label>
+                <Input
+                  type="number"
+                  min={2}
+                  value={form.max_members}
+                  onChange={(e) => setForm((p) => ({ ...p, max_members: e.target.value }))}
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 bg-card/80 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="h-4 w-4 text-primary" />
-              How AI helps study groups (for viva)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-[0.7rem] text-muted-foreground">
-            <p>
-              Explain this as a personal "study coach" on top of the <code className="mx-1 rounded bg-secondary px-1">study_groups</code>
-              and <code className="mx-1 rounded bg-secondary px-1">group_members</code> tables:
-            </p>
-            <ol className="list-decimal space-y-1 pl-4">
-              <li>Create groups with subjects, difficulty, schedule, and capacity.</li>
-              <li>Track which subjects a student joins or leaves over time.</li>
-              <li>
-                Ask the AI model to suggest a balanced weekly plan and which groups best match upcoming exams.
-              </li>
-              <li>Optionally generate practice questions or revision topics inside each group.</li>
-            </ol>
-            <p>
-              This shows how you combine relational data, user behaviour, and AI to improve how students study.
-            </p>
-          </CardContent>
-        </Card>
-      </section>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateGroup}>Create Group</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 };
