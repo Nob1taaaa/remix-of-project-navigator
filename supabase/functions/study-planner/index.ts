@@ -34,11 +34,10 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is not configured");
+    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAIApiKey) {
       return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
+        JSON.stringify({ error: "OPENAI_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -74,34 +73,25 @@ Output format (use clear headings and bullet points):
 
 Tone: Encouraging but honest. Very specific and actionable.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${openAIApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Create a personalised weekly study & placement plan.\n\n${userProfileSummary}` },
         ],
+        max_tokens: 2048,
       }),
     });
 
-    if (response.status === 429) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (response.status === 402) {
-      return new Response(JSON.stringify({ error: "AI usage limit reached." }), {
-        status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("OpenAI API error:", response.status, errorText);
       return new Response(
         JSON.stringify({ error: "Failed to generate study plan" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -116,8 +106,7 @@ Tone: Encouraging but honest. Very specific and actionable.`;
     }
 
     return new Response(JSON.stringify({ plan: plan.trim() }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("study-planner error:", error);
