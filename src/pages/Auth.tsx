@@ -10,6 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles, GraduationCap, Shield } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 
+const RATE_LIMIT_MS = 3000; // 3 seconds between attempts
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 60000; // 1 minute lockout after max attempts
+
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -18,6 +22,32 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
+  const [lastAttempt, setLastAttempt] = useState(0);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(0);
+
+  const checkRateLimit = (): boolean => {
+    const now = Date.now();
+    if (now < lockedUntil) {
+      const secsLeft = Math.ceil((lockedUntil - now) / 1000);
+      toast({ title: "Too many attempts", description: `Please wait ${secsLeft}s before trying again.`, variant: "destructive" });
+      return false;
+    }
+    if (now - lastAttempt < RATE_LIMIT_MS) {
+      toast({ title: "Slow down", description: "Please wait a moment before trying again.", variant: "destructive" });
+      return false;
+    }
+    const newCount = now - lastAttempt > LOCKOUT_MS ? 1 : attemptCount + 1;
+    if (newCount > MAX_ATTEMPTS) {
+      setLockedUntil(now + LOCKOUT_MS);
+      setAttemptCount(0);
+      toast({ title: "Too many attempts", description: "You've been temporarily locked out. Try again in 1 minute.", variant: "destructive" });
+      return false;
+    }
+    setAttemptCount(newCount);
+    setLastAttempt(now);
+    return true;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
