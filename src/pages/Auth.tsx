@@ -63,6 +63,7 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!checkRateLimit()) return;
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
