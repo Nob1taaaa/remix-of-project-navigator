@@ -17,64 +17,6 @@ const systemPrompt =
   "Avoid writing very long essays; focus on 3-6 key points and concrete next steps. " +
   "If the question is unsafe or outside your scope, say that briefly and suggest a safe alternative.";
 
-async function callAnthropic(messages: ChatMessage[]) {
-  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY missing");
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": anthropicKey,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-3-5-sonnet-latest",
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`anthropic_${response.status}:${errorText}`);
-  }
-
-  const data = await response.json();
-  const text = data?.content?.[0]?.text?.trim();
-  if (!text) throw new Error("anthropic_empty_response");
-  return text;
-}
-
-async function callOpenAI(messages: ChatMessage[]) {
-  const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!openAIApiKey) throw new Error("OPENAI_API_KEY missing");
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${openAIApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [{ role: "system", content: systemPrompt }, ...messages],
-      max_tokens: 2048,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`openai_${response.status}:${errorText}`);
-  }
-
-  const data = await response.json();
-  const text = data?.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("openai_empty_response");
-  return text;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -83,7 +25,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Authentication required" }), {
+      return new Response(JSON.stringify({ error: "Authentication required. Please sign in." }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -97,7 +39,7 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid or expired authentication token" }), {
+      return new Response(JSON.stringify({ error: "Your session has expired. Please sign in again." }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -105,31 +47,77 @@ serve(async (req) => {
 
     const { messages } = (await req.json()) as { messages?: ChatMessage[] };
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: "Missing messages array" }), {
+      return new Response(JSON.stringify({ error: "Please type a message to get started." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    let assistantMessage = "";
-    let anthropicError: string | null = null;
-
-    try {
-      assistantMessage = await callAnthropic(messages);
-    } catch (error) {
-      anthropicError = error instanceof Error ? error.message : "anthropic_unknown_error";
-      console.error("Anthropic failed, trying fallback:", anthropicError);
-      assistantMessage = await callOpenAI(messages);
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
+      return new Response(JSON.stringify({ error: "AI service is not configured. Please contact support." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    return new Response(JSON.stringify({ assistantMessage, providerWarning: anthropicError }), {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+        max_tokens: 2048,
+      }),
+    });
+
+    if (response.status === 429) {
+      return new Response(JSON.stringify({ error: "AI is busy right now. Please try again in a few seconds." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (response.status === 402) {
+      return new Response(JSON.stringify({ error: "AI service credits exhausted. Please contact the administrator." }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      return new Response(JSON.stringify({ error: "AI service temporarily unavailable. Please try again." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const data = await response.json();
+    const assistantMessage = data?.choices?.[0]?.message?.content?.trim();
+    if (!assistantMessage) {
+      return new Response(JSON.stringify({ error: "AI returned an empty response. Please try rephrasing your question." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ assistantMessage }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("qa-assistant error:", errorMessage);
-    return new Response(JSON.stringify({ error: "AI provider error", details: errorMessage }), {
+    return new Response(JSON.stringify({ error: "Something went wrong. Please try again later." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
