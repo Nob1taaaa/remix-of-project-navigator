@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CalendarDays, MapPin, ArrowRight, Search, Plus } from "lucide-react";
+import { CalendarDays, MapPin, ArrowRight, Search, Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,16 +27,18 @@ const EventsPage = () => {
   const [interestedEvents, setInterestedEvents] = useState<Set<string>>(new Set());
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [newEventForm, setNewEventForm] = useState({
     title: "", description: "", event_date: "", location: "", category: "",
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) navigate("/auth");
       else setUser(session.user);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/auth");
       else setUser(session.user);
     });
@@ -53,7 +55,7 @@ const EventsPage = () => {
       if (error) throw error;
       setEvents(data || []);
     } catch (error: any) {
-      toast({ title: "Error loading events", description: error.message, variant: "destructive" });
+      toast({ title: "Error loading events", description: error.message || "Could not load events. Please refresh.", variant: "destructive" });
     } finally { setLoading(false); }
   };
 
@@ -76,6 +78,7 @@ const EventsPage = () => {
 
   const handleToggleInterested = async (event: Event) => {
     if (!user) return;
+    setTogglingId(event.id);
     try {
       if (interestedEvents.has(event.id)) {
         const { error } = await supabase.from("event_attendees").delete().eq("event_id", event.id).eq("user_id", user.id);
@@ -86,9 +89,10 @@ const EventsPage = () => {
         const { error } = await supabase.from("event_attendees").insert({ event_id: event.id, user_id: user.id });
         if (error) throw error;
         setInterestedEvents((prev) => new Set(prev).add(event.id));
-        toast({ title: "Interest marked!", description: `${event.title} added to your list.` });
+        toast({ title: "Interest marked! ✅", description: `${event.title} added to your list.` });
       }
-    } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    } catch (error: any) { toast({ title: "Error", description: error.message || "Something went wrong. Try again.", variant: "destructive" }); }
+    finally { setTogglingId(null); }
   };
 
   const handleRemoveEvent = async (eventId: string) => {
@@ -98,7 +102,7 @@ const EventsPage = () => {
       if (error) throw error;
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
       toast({ title: "Event removed" });
-    } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    } catch (error: any) { toast({ title: "Error", description: error.message || "Could not remove event.", variant: "destructive" }); }
   };
 
   const handleAddEvent = async () => {
@@ -106,6 +110,7 @@ const EventsPage = () => {
     if (!newEventForm.title.trim() || !newEventForm.description.trim() || !newEventForm.event_date.trim() || !newEventForm.location.trim()) {
       toast({ title: "Missing fields", description: "Please fill in all required fields.", variant: "destructive" }); return;
     }
+    setSubmitting(true);
     try {
       const { data, error } = await supabase.from("events").insert({
         title: newEventForm.title.trim(), description: newEventForm.description.trim(),
@@ -114,18 +119,24 @@ const EventsPage = () => {
       }).select().single();
       if (error) throw error;
       setEvents((prev) => [data, ...prev]);
-      toast({ title: "Event added!" });
+      toast({ title: "Event added! 🎉" });
       setIsAddEventDialogOpen(false);
       setNewEventForm({ title: "", description: "", event_date: "", location: "", category: "" });
-    } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    } catch (error: any) { toast({ title: "Error", description: error.message || "Could not add event.", variant: "destructive" }); }
+    finally { setSubmitting(false); }
   };
 
   if (loading) {
-    return <div className="min-h-[50vh] flex items-center justify-center"><p className="text-muted-foreground animate-pulse text-sm">Loading events...</p></div>;
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading events...</p>
+      </div>
+    );
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 pb-16 pt-6 md:px-6 md:pt-8">
+    <main className="mx-auto max-w-5xl px-3 pb-16 pt-5 sm:px-4 sm:pt-6 md:px-6 md:pt-8">
       <PageHeader icon="📅" title="Campus Events" subtitle="Workshops, fests, club meets, and guest lectures across campus.">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-primary/20 bg-primary/5 text-xs text-foreground">
@@ -140,7 +151,7 @@ const EventsPage = () => {
       {/* Search */}
       <section className="mb-6 rounded-2xl border border-primary/12 bg-card/60 backdrop-blur-sm p-3">
         <div className="flex items-center gap-2 rounded-full border border-primary/15 bg-background/60 px-3 py-2">
-          <Search className="h-4 w-4 text-primary" />
+          <Search className="h-4 w-4 text-primary shrink-0" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -154,11 +165,18 @@ const EventsPage = () => {
       {filteredEvents.length === 0 && !search ? (
         <Card className="border-primary/12 bg-card/70 rounded-2xl">
           <CardContent className="py-12 text-center">
-            <p className="text-base font-semibold text-foreground">No events yet</p>
+            <p className="text-base font-semibold text-foreground">No upcoming events</p>
             <p className="text-sm text-muted-foreground mt-1">Be the first to add an event!</p>
             <Button size="sm" className="mt-4 rounded-full" onClick={() => setIsAddEventDialogOpen(true)}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Event
             </Button>
+          </CardContent>
+        </Card>
+      ) : filteredEvents.length === 0 && search ? (
+        <Card className="border-primary/12 bg-card/70 rounded-2xl">
+          <CardContent className="py-12 text-center">
+            <p className="text-base font-semibold text-foreground">No events found</p>
+            <p className="text-sm text-muted-foreground mt-1">Try a different search term.</p>
           </CardContent>
         </Card>
       ) : (
@@ -166,9 +184,9 @@ const EventsPage = () => {
           {filteredEvents.map((event) => (
             <Card key={event.id} className="hover-scale group border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden transition-all hover:shadow-md hover:border-primary/25">
               <div className="h-1.5 bg-gradient-to-r from-primary via-primary/60 to-accent-foreground/40" />
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 px-4 sm:px-6">
                 <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-base font-bold text-foreground leading-snug">{event.title}</CardTitle>
+                  <CardTitle className="text-sm sm:text-base font-bold text-foreground leading-snug">{event.title}</CardTitle>
                   {event.category && (
                     <Badge className="bg-primary/10 border-primary/25 text-primary text-xs font-semibold shrink-0">
                       {event.category}
@@ -176,10 +194,10 @@ const EventsPage = () => {
                   )}
                 </div>
                 {event.description && (
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                 )}
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 px-4 sm:px-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="bg-primary/8 border-primary/20 text-primary font-semibold text-xs">
                     <CalendarDays className="h-3 w-3 mr-1" />
@@ -202,8 +220,9 @@ const EventsPage = () => {
                     className={`h-8 rounded-full px-4 text-xs font-semibold ${interestedEvents.has(event.id) ? "bg-primary/10 text-primary border border-primary/25 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/25" : ""}`}
                     variant={interestedEvents.has(event.id) ? "outline" : "default"}
                     onClick={() => handleToggleInterested(event)}
+                    disabled={togglingId === event.id}
                   >
-                    {interestedEvents.has(event.id) ? "✗ Not Interested" : <>Mark interested <ArrowRight className="ml-1 h-3 w-3" /></>}
+                    {togglingId === event.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : interestedEvents.has(event.id) ? "✗ Not Interested" : <>Mark interested <ArrowRight className="ml-1 h-3 w-3" /></>}
                   </Button>
                 </div>
               </CardContent>
@@ -214,7 +233,7 @@ const EventsPage = () => {
 
       {/* Add Event Dialog */}
       <Dialog open={isAddEventDialogOpen} onOpenChange={setIsAddEventDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>📅 Add a new event</DialogTitle>
             <DialogDescription>Fill in the details. Visible to all students.</DialogDescription>
@@ -232,7 +251,7 @@ const EventsPage = () => {
               <Label htmlFor="event_date">Date & Time *</Label>
               <Input id="event_date" type="datetime-local" value={newEventForm.event_date} onChange={(e) => setNewEventForm((p) => ({ ...p, event_date: e.target.value }))} className="rounded-xl" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="location">Location *</Label>
                 <Input id="location" placeholder="e.g. Room 301" value={newEventForm.location} onChange={(e) => setNewEventForm((p) => ({ ...p, location: e.target.value }))} className="rounded-xl" />
@@ -243,9 +262,11 @@ const EventsPage = () => {
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => setIsAddEventDialogOpen(false)} className="rounded-xl">Cancel</Button>
-            <Button onClick={handleAddEvent} className="rounded-xl">Add Event</Button>
+            <Button onClick={handleAddEvent} className="rounded-xl" disabled={submitting}>
+              {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : "Add Event"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

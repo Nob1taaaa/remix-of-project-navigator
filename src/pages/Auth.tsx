@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, GraduationCap, Shield } from "lucide-react";
+import { Sparkles, GraduationCap, Shield, Loader2, ArrowLeft, KeyRound } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 
-const RATE_LIMIT_MS = 3000; // 3 seconds between attempts
+const RATE_LIMIT_MS = 3000;
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 60000; // 1 minute lockout after max attempts
+const LOCKOUT_MS = 60000;
+
+type ForgotStep = "idle" | "email" | "otp" | "newpass";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -21,10 +23,16 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [forgotMode, setForgotMode] = useState(false);
   const [lastAttempt, setLastAttempt] = useState(0);
   const [attemptCount, setAttemptCount] = useState(0);
   const [lockedUntil, setLockedUntil] = useState(0);
+
+  // OTP forgot password state
+  const [forgotStep, setForgotStep] = useState<ForgotStep>("idle");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const checkRateLimit = (): boolean => {
     const now = Date.now();
@@ -50,20 +58,22 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/");
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) navigate("/");
     });
-
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate("/");
+    });
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkRateLimit()) return;
+    if (password.length < 6) {
+      toast({ title: "Weak password", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -75,10 +85,13 @@ const Auth = () => {
         },
       });
       if (error) throw error;
-      toast({ title: "Account created!", description: "Check your email to confirm your account." });
+      toast({ title: "Account created! ✅", description: "Check your email to confirm your account before signing in." });
       setEmail(""); setPassword(""); setFullName("");
     } catch (error: any) {
-      toast({ title: "Error signing up", description: error.message, variant: "destructive" });
+      const msg = error.message?.includes("already registered")
+        ? "This email is already registered. Try signing in instead."
+        : error.message || "Something went wrong. Please try again.";
+      toast({ title: "Sign up failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -91,62 +104,210 @@ const Auth = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast({ title: "Welcome back!", description: "You've successfully signed in." });
+      toast({ title: "Welcome back! 👋", description: "You've successfully signed in." });
     } catch (error: any) {
-      toast({ title: "Error signing in", description: error.message, variant: "destructive" });
+      let msg = error.message || "Unable to sign in. Please try again.";
+      if (msg.includes("Invalid login")) msg = "Incorrect email or password. Please try again.";
+      else if (msg.includes("Email not confirmed")) msg = "Please confirm your email first. Check your inbox.";
+      toast({ title: "Sign in failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      toast({ title: "Enter your email", description: "Type your email above, then click Forgot password.", variant: "destructive" });
+  // OTP Forgot Password Flow
+  const handleSendOtp = async () => {
+    if (!forgotEmail.trim() || !forgotEmail.includes("@")) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    if (!checkRateLimit()) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast({ title: "OTP sent! 📧", description: "Check your email for the 6-digit verification code." });
+      setForgotStep("otp");
+    } catch (error: any) {
+      toast({ title: "Failed to send OTP", description: error.message || "Could not send reset email. Try again.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length < 6) {
+      toast({ title: "Invalid code", description: "Please enter the 6-digit code from your email.", variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { error } = await supabase.auth.verifyOtp({
+        email: forgotEmail.trim(),
+        token: otp.trim(),
+        type: "recovery",
       });
       if (error) throw error;
-      toast({ title: "Reset link sent!", description: "Check your email for the password reset link." });
-      setForgotMode(false);
+      toast({ title: "Code verified! ✅", description: "Now set your new password." });
+      setForgotStep("newpass");
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Invalid code", description: "The code is incorrect or expired. Please try again.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSetNewPassword = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: "Weak password", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords don't match", description: "Please make sure both passwords are the same.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast({ title: "Password updated! 🎉", description: "You can now sign in with your new password." });
+      resetForgotFlow();
+    } catch (error: any) {
+      toast({ title: "Failed to update", description: error.message || "Could not update password. Try again.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForgotFlow = () => {
+    setForgotStep("idle");
+    setForgotEmail("");
+    setOtp("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  // Forgot Password UI
+  if (forgotStep !== "idle") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
+        <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-accent/15 blur-[100px]" />
+
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="mb-6 flex flex-col items-center gap-3 text-center">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
+              <img src={logoImage} alt="Campus Innovation" className="relative h-14 w-14 rounded-2xl bg-card/90 p-1.5 shadow-lg object-contain" />
+            </div>
+          </div>
+
+          <Card className="border-primary/15 bg-card/80 backdrop-blur-xl shadow-lg rounded-2xl overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-primary via-accent-foreground to-primary" />
+            <CardHeader className="space-y-1 pb-4 pt-5">
+              <CardTitle className="text-lg font-semibold text-center flex items-center justify-center gap-2">
+                <KeyRound className="h-4 w-4 text-primary" />
+                {forgotStep === "email" && "Reset Password"}
+                {forgotStep === "otp" && "Enter Verification Code"}
+                {forgotStep === "newpass" && "Set New Password"}
+              </CardTitle>
+              <CardDescription className="text-center text-xs">
+                {forgotStep === "email" && "Enter your email to receive a 6-digit code"}
+                {forgotStep === "otp" && `We sent a code to ${forgotEmail}`}
+                {forgotStep === "newpass" && "Choose a strong new password"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {forgotStep === "email" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Email address</Label>
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+                      className="h-10 rounded-xl border-primary/20 bg-background/60 focus:border-primary/40"
+                    />
+                  </div>
+                  <Button onClick={handleSendOtp} disabled={loading} className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : "Send Verification Code"}
+                  </Button>
+                </>
+              )}
+
+              {forgotStep === "otp" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">6-digit code</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+                      className="h-12 rounded-xl border-primary/20 bg-background/60 text-center text-2xl font-mono tracking-[0.5em]"
+                    />
+                    <p className="text-[0.65rem] text-muted-foreground text-center mt-1">Check your email inbox (and spam folder)</p>
+                  </div>
+                  <Button onClick={handleVerifyOtp} disabled={loading || otp.length < 6} className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "Verify Code"}
+                  </Button>
+                  <button onClick={() => { setOtp(""); handleSendOtp(); }} className="w-full text-center text-xs text-primary hover:underline" disabled={loading}>
+                    Resend code
+                  </button>
+                </>
+              )}
+
+              {forgotStep === "newpass" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">New password</Label>
+                    <Input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-10 rounded-xl border-primary/20 bg-background/60" minLength={6} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Confirm password</Label>
+                    <Input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-10 rounded-xl border-primary/20 bg-background/60" minLength={6} />
+                  </div>
+                  <Button onClick={handleSetNewPassword} disabled={loading} className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</> : "Update Password"}
+                  </Button>
+                </>
+              )}
+
+              <button onClick={resetForgotFlow} className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="h-3 w-3" /> Back to sign in
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative blobs */}
       <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
       <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-accent/15 blur-[100px]" />
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-primary/5 blur-[80px]" />
 
       <div className="w-full max-w-md animate-fade-in">
-        {/* Logo & branding */}
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <div className="relative">
             <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
-            <img
-              src={logoImage}
-              alt="Campus Innovation"
-              className="relative h-16 w-16 rounded-2xl bg-card/90 p-1.5 shadow-lg object-contain"
-            />
+            <img src={logoImage} alt="Campus Innovation" className="relative h-16 w-16 rounded-2xl bg-card/90 p-1.5 shadow-lg object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
               Campus{" "}
-              <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">
-                Innovation
-              </span>
+              <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">Innovation</span>
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Your smart campus companion — events, groups & AI assistant
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Your smart campus companion — events, groups & AI assistant</p>
           </div>
         </div>
 
@@ -157,9 +318,7 @@ const Auth = () => {
               <Shield className="h-4 w-4 text-primary" />
               Welcome aboard
             </CardTitle>
-            <CardDescription className="text-center text-xs">
-              Sign in to access all campus features
-            </CardDescription>
+            <CardDescription className="text-center text-xs">Sign in to access all campus features</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
@@ -179,9 +338,9 @@ const Auth = () => {
                     <Input id="signin-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-10 rounded-xl border-primary/20 bg-background/60 focus:border-primary/40" />
                   </div>
                   <Button type="submit" className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-[var(--shadow-glow)] hover:shadow-lg transition-shadow" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in...</> : "Sign In"}
                   </Button>
-                  <button type="button" onClick={() => { setForgotMode(true); handleForgotPassword(); }} className="w-full text-center text-xs text-primary hover:underline mt-1">
+                  <button type="button" onClick={() => { setForgotStep("email"); setForgotEmail(email); }} className="w-full text-center text-xs text-primary hover:underline mt-1">
                     Forgot password?
                   </button>
                 </form>
@@ -202,7 +361,7 @@ const Auth = () => {
                     <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-10 rounded-xl border-primary/20 bg-background/60" />
                   </div>
                   <Button type="submit" className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-[var(--shadow-glow)] hover:shadow-lg transition-shadow" disabled={loading}>
-                    {loading ? "Creating account..." : "Sign Up"}
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...</> : "Sign Up"}
                   </Button>
                 </form>
               </TabsContent>
@@ -210,7 +369,6 @@ const Auth = () => {
           </CardContent>
         </Card>
 
-        {/* Trust badges */}
         <div className="mt-4 flex items-center justify-center gap-4 text-[0.65rem] text-muted-foreground">
           <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3 text-primary" /> AI Powered</span>
           <span className="inline-flex items-center gap-1"><GraduationCap className="h-3 w-3 text-primary" /> Campus Ready</span>

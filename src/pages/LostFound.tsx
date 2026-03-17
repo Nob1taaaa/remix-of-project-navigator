@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArchiveRestore, Search, MapPin, Sparkles, Clock } from "lucide-react";
+import { ArchiveRestore, Search, MapPin, Sparkles, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ const LostFoundPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [type, setType] = useState<"lost" | "found" | "">("");
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -33,10 +34,10 @@ const LostFoundPage = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) navigate("/auth"); else setUser(session.user);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/auth"); else setUser(session.user);
     });
     return () => subscription.unsubscribe();
@@ -50,15 +51,16 @@ const LostFoundPage = () => {
       if (error) throw error;
       setPosts(data || []);
     } catch (error: any) {
-      toast({ title: "Error loading posts", description: error.message, variant: "destructive" });
+      toast({ title: "Error loading posts", description: error.message || "Could not load posts. Refresh the page.", variant: "destructive" });
     } finally { setLoading(false); }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user || !type || !title.trim() || !location.trim() || !description.trim()) {
-      toast({ variant: "destructive", title: "Missing information", description: "Please fill in all required fields." }); return;
+      toast({ variant: "destructive", title: "Missing information", description: "Please fill in all required fields including the type (lost/found)." }); return;
     }
+    setSubmitting(true);
     try {
       const { data, error } = await supabase.from("lost_found_posts").insert({
         user_id: user.id, type, title: title.trim(), location: location.trim(),
@@ -66,9 +68,10 @@ const LostFoundPage = () => {
       }).select().single();
       if (error) throw error;
       setPosts((prev) => [data, ...prev]);
-      toast({ title: "Post added!", description: "Your post is now visible on the board." });
+      toast({ title: "Post added! ✅", description: "Your post is now visible on the board." });
       setTitle(""); setLocation(""); setWhen(""); setDescription(""); setType("");
-    } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    } catch (error: any) { toast({ title: "Error", description: error.message || "Could not save post. Try again.", variant: "destructive" }); }
+    finally { setSubmitting(false); }
   };
 
   const handleRemovePost = async (postId: string) => {
@@ -77,7 +80,7 @@ const LostFoundPage = () => {
       if (error) throw error;
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       toast({ title: "Post removed" });
-    } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    } catch (error: any) { toast({ title: "Error", description: error.message || "Could not remove post.", variant: "destructive" }); }
   };
 
   const filteredPosts = posts.filter((post) => {
@@ -110,7 +113,12 @@ const LostFoundPage = () => {
     </button>
   );
 
-  if (loading) return <div className="min-h-[50vh] flex items-center justify-center"><p className="text-muted-foreground animate-pulse">Loading...</p></div>;
+  if (loading) return (
+    <div className="min-h-[50vh] flex items-center justify-center gap-2">
+      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">Loading posts...</p>
+    </div>
+  );
 
   return (
     <main className="mx-auto max-w-6xl px-3 pb-16 pt-5 sm:px-4 sm:pt-6 md:px-6 md:pt-8">
@@ -128,19 +136,19 @@ const LostFoundPage = () => {
           />
           <button
             onClick={() => setType("lost")}
-            className={`relative z-10 h-8 rounded-full px-4 font-medium transition-colors duration-200 ${
+            className={`relative z-10 h-8 rounded-full px-3 sm:px-4 font-medium transition-colors duration-200 text-[0.7rem] sm:text-xs ${
               type === "lost" ? "text-destructive-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            🔴 I lost something
+            🔴 Lost
           </button>
           <button
             onClick={() => setType("found")}
-            className={`relative z-10 h-8 rounded-full px-4 font-medium transition-colors duration-200 ${
+            className={`relative z-10 h-8 rounded-full px-3 sm:px-4 font-medium transition-colors duration-200 text-[0.7rem] sm:text-xs ${
               type === "found" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            🟢 I found something
+            🟢 Found
           </button>
         </div>
       </PageHeader>
@@ -153,7 +161,7 @@ const LostFoundPage = () => {
           <TabButton id="found" label="🟢 Found" />
           <TabButton id="mine" label="My posts" />
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2 text-[0.7rem] text-muted-foreground">
+        <div className="hidden sm:flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2 text-[0.7rem] text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary flex-shrink-0" />
           <span>AI auto-matches similar lost &amp; found posts</span>
         </div>
@@ -169,15 +177,17 @@ const LostFoundPage = () => {
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Posts */}
-        <div className="space-y-3">
+        <div className="space-y-3 order-2 lg:order-1">
           {filteredPosts.length === 0 ? (
             <Card className="border-primary/12 bg-card/70 rounded-2xl">
               <CardContent className="py-10 text-center">
                 <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-center mb-3">
                   <ArchiveRestore className="h-6 w-6 text-primary/50" />
                 </div>
-                <p className="text-sm font-medium text-foreground">No posts yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Be the first to report a lost or found item!</p>
+                <p className="text-sm font-medium text-foreground">No posts found</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {search ? "Try a different search term." : "Be the first to report a lost or found item!"}
+                </p>
               </CardContent>
             </Card>
           ) : (
@@ -186,52 +196,44 @@ const LostFoundPage = () => {
               const isLost = post.type === "lost";
 
               return (
-                <Card key={post.id} className="group relative border-0 bg-card/80 backdrop-blur-xl shadow-sm rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  {/* Decorative gradient border */}
-                  <div className="absolute inset-0 rounded-3xl p-[1px] pointer-events-none">
-                    <div className={`h-full w-full rounded-3xl ${
+                <Card key={post.id} className="group relative border-0 bg-card/80 backdrop-blur-xl shadow-sm rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                  <div className="absolute inset-0 rounded-2xl sm:rounded-3xl p-[1px] pointer-events-none">
+                    <div className={`h-full w-full rounded-2xl sm:rounded-3xl ${
                       isLost 
                         ? "bg-gradient-to-br from-destructive/25 via-transparent to-destructive/10" 
                         : "bg-gradient-to-br from-primary/25 via-transparent to-primary/10"
                     }`} />
                   </div>
-                  {/* Top accent strip */}
                   <div className={`h-1 ${isLost ? "bg-gradient-to-r from-destructive via-destructive/60 to-transparent" : "bg-gradient-to-r from-primary via-primary/60 to-transparent"}`} />
-                  {/* Decorative blob */}
-                  <div className={`pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl ${
-                    isLost ? "bg-destructive/8" : "bg-primary/8"
-                  }`} />
                   
-                  <CardHeader className="relative pb-2 px-5 pt-5">
+                  <CardHeader className="relative pb-2 px-4 sm:px-5 pt-4 sm:pt-5">
                     <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 flex-shrink-0 rounded-2xl flex items-center justify-center shadow-sm ${
+                      <div className={`h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm ${
                         isLost 
                           ? "bg-gradient-to-br from-destructive/20 to-destructive/5 border border-destructive/20" 
                           : "bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20"
                       }`}>
-                        <span className="text-base">{isLost ? "😟" : "😊"}</span>
+                        <span className="text-sm sm:text-base">{isLost ? "😟" : "😊"}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <Badge className={`text-[0.6rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md ${
-                            isLost ? "bg-destructive/10 border-destructive/25 text-destructive" : "bg-primary/10 border-primary/25 text-primary"
-                          }`}>
-                            {isLost ? "LOST" : "FOUND"}
-                          </Badge>
-                        </div>
+                        <Badge className={`text-[0.55rem] sm:text-[0.6rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md mb-0.5 ${
+                          isLost ? "bg-destructive/10 border-destructive/25 text-destructive" : "bg-primary/10 border-primary/25 text-primary"
+                        }`}>
+                          {isLost ? "LOST" : "FOUND"}
+                        </Badge>
                         <CardTitle className="text-sm sm:text-[0.95rem] font-bold text-foreground truncate leading-tight">{post.title}</CardTitle>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="relative space-y-3.5 text-xs px-5 pb-5">
-                    <p className="text-muted-foreground text-[0.8rem] leading-relaxed line-clamp-3">{post.description}</p>
+                  <CardContent className="relative space-y-3 text-xs px-4 sm:px-5 pb-4 sm:pb-5">
+                    <p className="text-muted-foreground text-[0.75rem] sm:text-[0.8rem] leading-relaxed line-clamp-3">{post.description}</p>
                     
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-accent/15 border border-accent-foreground/10 px-3 py-1.5 text-[0.7rem] font-medium text-accent-foreground shadow-sm">
+                      <span className="inline-flex items-center gap-1.5 rounded-lg sm:rounded-xl bg-accent/15 border border-accent-foreground/10 px-2.5 py-1 sm:py-1.5 text-[0.65rem] sm:text-[0.7rem] font-medium text-accent-foreground shadow-sm">
                         <MapPin className="h-3 w-3" /> {post.location}
                       </span>
                       {post.approximate_time && (
-                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/8 border border-primary/12 px-3 py-1.5 text-[0.7rem] font-medium text-primary shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg sm:rounded-xl bg-primary/8 border border-primary/12 px-2.5 py-1 sm:py-1.5 text-[0.65rem] sm:text-[0.7rem] font-medium text-primary shadow-sm">
                           <Clock className="h-3 w-3" /> {post.approximate_time}
                         </span>
                       )}
@@ -240,17 +242,17 @@ const LostFoundPage = () => {
                     <div className="flex flex-wrap gap-2 pt-1">
                       <Button
                         size="sm"
-                        className={`h-8 rounded-xl text-[0.7rem] px-4 font-semibold shadow-sm transition-all duration-200 hover:shadow-md ${
+                        className={`h-8 rounded-xl text-[0.65rem] sm:text-[0.7rem] px-3 sm:px-4 font-semibold shadow-sm transition-all duration-200 hover:shadow-md ${
                           isLost 
-                            ? "bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground hover:from-destructive/90 hover:to-destructive/70" 
-                            : "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70"
+                            ? "bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground" 
+                            : "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
                         }`}
                         onClick={() => toast({ title: isLost ? "Notify matches" : "Contact owner", description: isLost ? "AI will suggest matching 'found' posts." : "Opens a safe contact channel." })}
                       >
-                        {isLost ? "🔔 Notify me if found" : "🙋 I think this is mine"}
+                        {isLost ? "🔔 Notify if found" : "🙋 This is mine"}
                       </Button>
                       {isOwner && (
-                        <Button size="sm" variant="ghost" className="h-8 rounded-xl text-[0.7rem] px-3 text-destructive/70 hover:text-destructive hover:bg-destructive/8" onClick={() => handleRemovePost(post.id)}>
+                        <Button size="sm" variant="ghost" className="h-8 rounded-xl text-[0.65rem] sm:text-[0.7rem] px-3 text-destructive/70 hover:text-destructive hover:bg-destructive/8" onClick={() => handleRemovePost(post.id)}>
                           Remove
                         </Button>
                       )}
@@ -263,7 +265,7 @@ const LostFoundPage = () => {
         </div>
 
         {/* Form */}
-        <Card className="border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl h-fit overflow-hidden">
+        <Card className="border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl h-fit overflow-hidden order-1 lg:order-2">
           <div className="h-1 bg-gradient-to-r from-primary/50 to-accent-foreground/30" />
           <CardHeader className="pb-3 px-4 pt-4">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -286,7 +288,7 @@ const LostFoundPage = () => {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[0.75rem]">Short title *</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Lost: black backpack in library" className="h-9 text-xs rounded-xl border-primary/15" />
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Lost: black backpack" className="h-9 text-xs rounded-xl border-primary/15" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[0.75rem]">Where *</Label>
@@ -300,8 +302,8 @@ const LostFoundPage = () => {
                 <Label className="text-[0.75rem]">Description *</Label>
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the item, color, any identifiers..." rows={3} className="resize-none text-xs rounded-xl border-primary/15" />
               </div>
-              <Button type="submit" className="mt-2 h-9 w-full rounded-xl text-xs bg-gradient-to-r from-primary to-primary/80 shadow-sm">
-                Save to board
+              <Button type="submit" className="mt-2 h-9 w-full rounded-xl text-xs bg-gradient-to-r from-primary to-primary/80 shadow-sm" disabled={submitting}>
+                {submitting ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Saving...</> : "Save to board"}
               </Button>
             </form>
           </CardContent>
