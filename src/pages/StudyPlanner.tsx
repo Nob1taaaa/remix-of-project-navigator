@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Target, Clock, BookOpen, Loader2 } from "lucide-react";
+import { Sparkles, Target, Clock, BookOpen } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
 import PageHeader from "@/components/PageHeader";
 
@@ -47,12 +47,7 @@ const StudyPlannerPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
-  if (isLoading) return (
-    <div className="flex min-h-[50vh] items-center justify-center gap-2">
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">Loading planner...</p>
-    </div>
-  );
+  if (isLoading) return <div className="flex min-h-[50vh] items-center justify-center"><p className="text-muted-foreground animate-pulse">Loading...</p></div>;
   if (!session) return null;
 
   const toggleFocus = (label: string) => {
@@ -60,33 +55,14 @@ const StudyPlannerPage = () => {
   };
 
   const generatePlan = async () => {
-    if (!hoursPerWeek.trim()) { toast({ title: "Add weekly hours", description: "Tell the assistant roughly how many hours you can give per week.", variant: "destructive" }); return; }
+    if (!hoursPerWeek.trim()) { toast({ title: "Add weekly hours", description: "Tell the assistant roughly how many hours you can give per week." }); return; }
     setIsGenerating(true); setPlan("");
-
-    try {
-      const { data, error } = await supabase.functions.invoke<{ plan?: string; error?: string }>("study-planner", {
-        body: { semester, targetRole, hoursPerWeek, focusAreas: selectedFocus, upcomingExams, extraContext },
-      });
-
-      if (error) {
-        toast({ title: "Could not generate plan", description: "The AI planner is unavailable right now. Please try again.", variant: "destructive" });
-        setIsGenerating(false);
-        return;
-      }
-
-      if (data?.error) {
-        toast({ title: "AI error", description: data.error, variant: "destructive" });
-        setIsGenerating(false);
-        return;
-      }
-
-      if (data?.plan) setPlan(data.plan.trim());
-      else toast({ title: "Empty plan", description: "AI returned no content. Try again with more details.", variant: "destructive" });
-    } catch (e) {
-      toast({ title: "Network error", description: "Could not connect to AI service. Check your connection.", variant: "destructive" });
-    } finally {
-      setIsGenerating(false);
-    }
+    const { data, error } = await supabase.functions.invoke<{ plan: string }>("study-planner", {
+      body: { semester, targetRole, hoursPerWeek, focusAreas: selectedFocus, upcomingExams, extraContext },
+    });
+    if (error) { toast({ title: "Could not generate plan", description: "The AI planner is unavailable right now.", variant: "destructive" }); setIsGenerating(false); return; }
+    if (data?.plan) setPlan(data.plan.trim());
+    setIsGenerating(false);
   };
 
   return (
@@ -97,7 +73,7 @@ const StudyPlannerPage = () => {
         </Badge>
       </PageHeader>
 
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)]">
+      <section className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)]">
         <Card className="border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-primary to-accent-foreground/50" />
           <CardHeader className="pb-3">
@@ -106,7 +82,7 @@ const StudyPlannerPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="semester" className="text-xs">Semester / year</Label>
                 <Input id="semester" value={semester} onChange={(e) => setSemester(e.target.value)} placeholder="e.g. 3rd year, 5th sem" className="rounded-xl border-primary/15" />
@@ -151,10 +127,10 @@ const StudyPlannerPage = () => {
             </div>
 
             <div className="pt-1">
-              <Button className="h-10 w-full sm:w-auto rounded-xl px-5 text-sm bg-gradient-to-r from-primary to-primary/80 shadow-[var(--shadow-glow)] hover:shadow-lg transition-shadow" onClick={generatePlan} disabled={isGenerating}>
-                {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating your plan…</> : "🎯 Generate my weekly plan"}
+              <Button className="h-10 rounded-xl px-5 text-sm bg-gradient-to-r from-primary to-primary/80 shadow-[var(--shadow-glow)] hover:shadow-lg transition-shadow" onClick={generatePlan} disabled={isGenerating}>
+                {isGenerating ? "✨ Generating your plan…" : "🎯 Generate my weekly plan"}
               </Button>
-              <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Powered by AI — uses your inputs only.</p>
+              <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Powered by AI via Lovable Cloud — uses your inputs only.</p>
             </div>
           </CardContent>
         </Card>
@@ -167,14 +143,8 @@ const StudyPlannerPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <ScrollArea className="h-[300px] sm:h-[360px] rounded-xl border border-primary/10 bg-background/40 p-4 text-sm">
-              {isGenerating ? (
-                <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm font-medium text-foreground">Creating your personalized plan...</p>
-                  <p className="text-xs text-muted-foreground">This may take 10-20 seconds</p>
-                </div>
-              ) : plan ? (
+            <ScrollArea className="h-[360px] rounded-xl border border-primary/10 bg-background/40 p-4 text-sm">
+              {plan ? (
                 <article className="max-w-none whitespace-pre-wrap text-[0.86rem] leading-relaxed text-foreground">
                   {plan}
                 </article>

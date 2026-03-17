@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { MessageCircle, Sparkles, Loader2, Send } from "lucide-react";
+import { useState } from "react";
+import { MessageCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,13 +13,6 @@ const QAPage = () => {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isSending]);
 
   const sendMessage = async () => {
     const trimmed = input.trim();
@@ -29,31 +22,15 @@ const QAPage = () => {
     setMessages(nextMessages);
     setInput("");
     setIsSending(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke<{ assistantMessage?: string; error?: string }>("qa-assistant", { body: { messages: nextMessages } });
-
-      if (error) {
-        const errMsg = (error as any)?.message || "Unable to get a response. Please try again.";
-        toast({ title: "AI assistant error", description: errMsg, variant: "destructive" });
-        setIsSending(false);
-        return;
-      }
-
-      if (data?.error) {
-        toast({ title: "AI assistant error", description: data.error, variant: "destructive" });
-        setIsSending(false);
-        return;
-      }
-
-      const reply = data?.assistantMessage?.trim();
-      if (reply) setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      else toast({ title: "Empty response", description: "AI returned no response. Try rephrasing your question.", variant: "destructive" });
-    } catch (e: any) {
-      toast({ title: "Network error", description: "Could not connect to AI. Check your connection.", variant: "destructive" });
-    } finally {
+    const { data, error } = await supabase.functions.invoke<{ assistantMessage: string }>("qa-assistant", { body: { messages: nextMessages } });
+    if (error) {
+      toast({ title: "AI assistant error", description: "Unable to get a response. Try again.", variant: "destructive" });
       setIsSending(false);
+      return;
     }
+    const reply = data?.assistantMessage?.trim();
+    if (reply) setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    setIsSending(false);
   };
 
   const quickQuestions = [
@@ -83,46 +60,43 @@ const QAPage = () => {
         </CardHeader>
         <CardContent className="space-y-3 px-3 sm:px-6 sm:space-y-4">
           <ScrollArea className="h-56 sm:h-72 md:h-80 rounded-xl border border-primary/10 bg-background/50 p-3 sm:p-4">
-            <div ref={scrollRef}>
-              {messages.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center gap-2 sm:gap-3 text-center text-muted-foreground py-12">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-primary/8 flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary/40" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Ask me anything!</p>
-                    <p className="text-[0.7rem] sm:text-xs mt-1 max-w-sm">I can help with academics, career guidance, campus life, study tips, and more.</p>
-                  </div>
+            {messages.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 sm:gap-3 text-center text-muted-foreground">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-primary/8 flex items-center justify-center">
+                  <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary/40" />
                 </div>
-              ) : (
-                <div className="space-y-2.5 sm:space-y-3">
-                  {messages.map((m, idx) => (
-                    <div key={idx} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[0.8rem] sm:text-sm leading-relaxed whitespace-pre-wrap ${
-                          m.role === "user"
-                            ? "bg-primary text-primary-foreground rounded-br-sm"
-                            : "bg-secondary/70 text-secondary-foreground rounded-bl-sm"
-                        }`}
-                      >
-                        <span className="block text-[0.6rem] sm:text-[0.65rem] font-semibold opacity-60 mb-0.5">
-                          {m.role === "user" ? "You" : "AI Assistant"}
-                        </span>
-                        {m.content}
-                      </div>
-                    </div>
-                  ))}
-                  {isSending && (
-                    <div className="flex justify-start">
-                      <div className="rounded-2xl rounded-bl-sm bg-secondary/70 px-3 py-2 sm:px-4 sm:py-2.5 text-[0.8rem] sm:text-sm text-muted-foreground flex items-center gap-2">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Thinking...
-                      </div>
-                    </div>
-                  )}
+                <div>
+                  <p className="text-sm font-medium text-foreground">Ask me anything!</p>
+                  <p className="text-[0.7rem] sm:text-xs mt-1 max-w-sm">I can help with academics, career guidance, campus life, study tips, and more.</p>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5 sm:space-y-3">
+                {messages.map((m, idx) => (
+                  <div key={idx} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[0.8rem] sm:text-sm leading-relaxed ${
+                        m.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-secondary/70 text-secondary-foreground rounded-bl-sm"
+                      }`}
+                    >
+                      <span className="block text-[0.6rem] sm:text-[0.65rem] font-semibold opacity-60 mb-0.5">
+                        {m.role === "user" ? "You" : "AI Assistant"}
+                      </span>
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+                {isSending && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl rounded-bl-sm bg-secondary/70 px-3 py-2 sm:px-4 sm:py-2.5 text-[0.8rem] sm:text-sm text-muted-foreground animate-pulse">
+                      Thinking...
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </ScrollArea>
 
           {/* Quick questions */}
@@ -134,7 +108,7 @@ const QAPage = () => {
               {quickQuestions.map((q) => (
                 <button
                   key={q}
-                  onClick={() => setInput(q)}
+                  onClick={() => { setInput(q); }}
                   className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[0.65rem] sm:text-xs text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors"
                 >
                   {q}
@@ -161,11 +135,11 @@ const QAPage = () => {
               <p className="text-[0.6rem] sm:text-xs text-muted-foreground hidden sm:block">Press Enter to send</p>
               <Button
                 size="sm"
-                className="h-8 sm:h-9 rounded-full px-4 sm:px-5 text-xs sm:text-sm ml-auto gap-1.5"
+                className="h-8 sm:h-9 rounded-full px-4 sm:px-5 text-xs sm:text-sm ml-auto"
                 disabled={isSending || !input.trim()}
                 onClick={sendMessage}
               >
-                {isSending ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Thinking...</> : <><Send className="h-3.5 w-3.5" /> Ask AI</>}
+                {isSending ? "Thinking..." : "✨ Ask AI"}
               </Button>
             </div>
           </div>

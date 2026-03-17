@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Clock, GraduationCap, Sparkles, Plus, Loader2 } from "lucide-react";
+import { Users, Clock, GraduationCap, Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,15 +28,13 @@ const StudyGroupsPage = () => {
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
   const [tab, setTab] = useState<"all" | "dsa" | "dbms" | "others">("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [joiningId, setJoiningId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", description: "", subject: "", schedule: "", max_members: "10" });
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/auth"); else setUser(session.user);
     });
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) navigate("/auth"); else setUser(session.user);
     });
     return () => subscription.unsubscribe();
@@ -58,7 +56,7 @@ const StudyGroupsPage = () => {
         }
       }
     } catch (error: any) {
-      toast({ title: "Error loading groups", description: error.message || "Could not load study groups.", variant: "destructive" });
+      toast({ title: "Error loading groups", description: error.message, variant: "destructive" });
     } finally { setLoading(false); }
   };
 
@@ -70,30 +68,25 @@ const StudyGroupsPage = () => {
 
   const handleJoinGroup = async (groupId: string) => {
     if (!user) return;
-    setJoiningId(groupId);
-    try {
-      if (joinedGroups.has(groupId)) {
-        const { error } = await supabase.from("study_group_members").delete().eq("group_id", groupId).eq("user_id", user.id);
-        if (error) throw error;
-        setJoinedGroups((prev) => { const n = new Set(prev); n.delete(groupId); return n; });
-        setMemberCounts((prev) => ({ ...prev, [groupId]: Math.max(0, (prev[groupId] || 1) - 1) }));
-        toast({ title: "Left group" });
-      } else {
-        const { error } = await supabase.from("study_group_members").insert({ group_id: groupId, user_id: user.id });
-        if (error) throw error;
-        setJoinedGroups((prev) => new Set(prev).add(groupId));
-        setMemberCounts((prev) => ({ ...prev, [groupId]: (prev[groupId] || 0) + 1 }));
-        toast({ title: "Joined group! ✅" });
-      }
-    } catch (error: any) { toast({ title: "Error", description: error.message || "Something went wrong.", variant: "destructive" }); }
-    finally { setJoiningId(null); }
+    if (joinedGroups.has(groupId)) {
+      const { error } = await supabase.from("study_group_members").delete().eq("group_id", groupId).eq("user_id", user.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      setJoinedGroups((prev) => { const n = new Set(prev); n.delete(groupId); return n; });
+      setMemberCounts((prev) => ({ ...prev, [groupId]: Math.max(0, (prev[groupId] || 1) - 1) }));
+      toast({ title: "Left group" });
+    } else {
+      const { error } = await supabase.from("study_group_members").insert({ group_id: groupId, user_id: user.id });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      setJoinedGroups((prev) => new Set(prev).add(groupId));
+      setMemberCounts((prev) => ({ ...prev, [groupId]: (prev[groupId] || 0) + 1 }));
+      toast({ title: "Joined group!" });
+    }
   };
 
   const handleCreateGroup = async () => {
     if (!user || !form.title.trim() || !form.subject.trim()) {
       toast({ title: "Missing fields", description: "Title and subject are required.", variant: "destructive" }); return;
     }
-    setSubmitting(true);
     try {
       const { data, error } = await supabase.from("study_groups").insert({
         creator_id: user.id, title: form.title.trim(), description: form.description.trim() || null,
@@ -103,14 +96,13 @@ const StudyGroupsPage = () => {
       setGroups((prev) => [data, ...prev]);
       setIsCreateOpen(false);
       setForm({ title: "", description: "", subject: "", schedule: "", max_members: "10" });
-      toast({ title: "Group created! 🎉" });
-    } catch (error: any) { toast({ title: "Error", description: error.message || "Could not create group.", variant: "destructive" }); }
-    finally { setSubmitting(false); }
+      toast({ title: "Group created!" });
+    } catch (error: any) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
   };
 
   const handleDeleteGroup = async (groupId: string) => {
     const { error } = await supabase.from("study_groups").delete().eq("id", groupId);
-    if (error) { toast({ title: "Error", description: error.message || "Could not delete group.", variant: "destructive" }); return; }
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
     toast({ title: "Group deleted" });
   };
@@ -133,12 +125,7 @@ const StudyGroupsPage = () => {
     >{label}</button>
   );
 
-  if (loading) return (
-    <div className="min-h-[50vh] flex items-center justify-center gap-2">
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">Loading study groups...</p>
-    </div>
-  );
+  if (loading) return <div className="min-h-[50vh] flex items-center justify-center"><p className="text-muted-foreground animate-pulse">Loading...</p></div>;
 
   const subjectColors: Record<string, string> = {
     dsa: "from-primary to-primary/50",
@@ -170,16 +157,16 @@ const StudyGroupsPage = () => {
           <Tab id="dbms" label="🗄️ DBMS" />
           <Tab id="others" label="📚 Others" />
         </div>
-        <div className="hidden sm:flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2 text-[0.7rem] text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2 text-[0.7rem] text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           <span>AI suggests ideal groups based on your subjects</span>
         </div>
       </section>
 
       {/* Groups grid */}
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-2">
         {filteredGroups.length === 0 ? (
-          <Card className="border-primary/12 bg-card/70 rounded-2xl sm:col-span-2">
+          <Card className="border-primary/12 bg-card/70 rounded-2xl md:col-span-2">
             <CardContent className="py-10 text-center">
               <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-center mb-3">
                 <Users className="h-6 w-6 text-primary/50" />
@@ -198,7 +185,7 @@ const StudyGroupsPage = () => {
             return (
               <Card key={group.id} className="hover-scale group border-primary/12 bg-card/70 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden transition-all hover:shadow-md hover:border-primary/25">
                 <div className={`h-1.5 bg-gradient-to-r ${getGradient(group.subject)}`} />
-                <CardHeader className="pb-3 px-4 sm:px-6">
+                <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-sm font-bold truncate">{group.title}</CardTitle>
@@ -211,12 +198,13 @@ const StudyGroupsPage = () => {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 text-xs px-4 sm:px-6">
+                <CardContent className="space-y-3 text-xs">
+                  {/* Progress bar */}
                   <div className="h-1.5 rounded-full bg-primary/10 overflow-hidden">
                     <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500" style={{ width: `${progress}%` }} />
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 border border-primary/15 px-2.5 py-1 text-[0.7rem] font-medium text-primary">
                       <GraduationCap className="h-3 w-3" /> {group.subject}
                     </span>
@@ -235,9 +223,8 @@ const StudyGroupsPage = () => {
                       variant={isJoined ? "outline" : "default"}
                       className={`h-8 rounded-full text-[0.7rem] px-4 ${isJoined ? "border-primary/20 text-primary hover:bg-primary/5" : ""}`}
                       onClick={() => handleJoinGroup(group.id)}
-                      disabled={joiningId === group.id}
                     >
-                      {joiningId === group.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isJoined ? "✓ Leave group" : "Join group"}
+                      {isJoined ? "✓ Leave group" : "Join group"}
                     </Button>
                     {isCreator && (
                       <Button size="sm" variant="outline" className="h-8 rounded-full text-[0.7rem] border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => handleDeleteGroup(group.id)}>
@@ -254,7 +241,7 @@ const StudyGroupsPage = () => {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">👥 Create a study group</DialogTitle>
             <DialogDescription>Set up a new study group for your campus mates.</DialogDescription>
@@ -272,7 +259,7 @@ const StudyGroupsPage = () => {
               <Label>Description</Label>
               <Textarea placeholder="What will you study? Any prerequisites?" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} rows={3} className="rounded-xl" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Schedule</Label>
                 <Input placeholder="e.g. Mon, Wed 7 PM" value={form.schedule} onChange={(e) => setForm((p) => ({ ...p, schedule: e.target.value }))} className="rounded-xl" />
@@ -283,11 +270,9 @@ const StudyGroupsPage = () => {
               </div>
             </div>
           </div>
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl">Cancel</Button>
-            <Button onClick={handleCreateGroup} className="rounded-xl" disabled={submitting}>
-              {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : "Create Group"}
-            </Button>
+            <Button onClick={handleCreateGroup} className="rounded-xl">Create Group</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
