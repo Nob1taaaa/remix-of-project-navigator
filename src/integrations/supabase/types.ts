@@ -100,6 +100,207 @@ export type Database = {
           },
         ]
       }
+      lost_found_chats: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          post_id: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_chats_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "lost_found_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lost_found_chats_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lost_found_claims: {
+        Row: {
+          answer: string
+          claimant_id: string
+          created_at: string
+          id: string
+          post_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          claimant_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          claimant_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_claims_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lost_found_matches: {
+        Row: {
+          created_at: string
+          id: string
+          matched_post_id: string
+          post_id: string
+          similarity_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matched_post_id: string
+          post_id: string
+          similarity_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matched_post_id?: string
+          post_id?: string
+          similarity_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_matches_matched_post_id_fkey"
+            columns: ["matched_post_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lost_found_matches_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lost_found_meetups: {
+        Row: {
+          chat_id: string
+          confirmed_by_user1: boolean | null
+          confirmed_by_user2: boolean | null
+          created_at: string
+          id: string
+          location: string
+          meet_time: string
+          status: string
+          suggested_by: string
+        }
+        Insert: {
+          chat_id: string
+          confirmed_by_user1?: boolean | null
+          confirmed_by_user2?: boolean | null
+          created_at?: string
+          id?: string
+          location: string
+          meet_time: string
+          status?: string
+          suggested_by: string
+        }
+        Update: {
+          chat_id?: string
+          confirmed_by_user1?: boolean | null
+          confirmed_by_user2?: boolean | null
+          created_at?: string
+          id?: string
+          location?: string
+          meet_time?: string
+          status?: string
+          suggested_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_meetups_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lost_found_messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          metadata: Json | null
+          sender_id: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          sender_id: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lost_found_posts: {
         Row: {
           approximate_time: string | null
@@ -108,6 +309,8 @@ export type Database = {
           id: string
           is_resolved: boolean
           location: string
+          secret_answer: string | null
+          secret_question: string | null
           title: string
           type: string
           updated_at: string
@@ -120,6 +323,8 @@ export type Database = {
           id?: string
           is_resolved?: boolean
           location: string
+          secret_answer?: string | null
+          secret_question?: string | null
           title: string
           type: string
           updated_at?: string
@@ -132,12 +337,52 @@ export type Database = {
           id?: string
           is_resolved?: boolean
           location?: string
+          secret_answer?: string | null
+          secret_question?: string | null
           title?: string
           type?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      lost_found_reunions: {
+        Row: {
+          confirmed_by_user1: boolean | null
+          confirmed_by_user2: boolean | null
+          created_at: string
+          id: string
+          post_id: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          confirmed_by_user1?: boolean | null
+          confirmed_by_user2?: boolean | null
+          created_at?: string
+          id?: string
+          post_id: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          confirmed_by_user1?: boolean | null
+          confirmed_by_user2?: boolean | null
+          created_at?: string
+          id?: string
+          post_id?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_reunions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "lost_found_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import ReunionFeed from "@/components/lost-found/ReunionFeed";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -118,6 +119,9 @@ const Index = () => {
             </Card>
           ))}
         </section>
+
+        {/* Reunion Feed */}
+        <ReunionFeed />
 
         {/* Quick info for logged-out users */}
         {!user && (
