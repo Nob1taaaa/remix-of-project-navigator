@@ -120,6 +120,9 @@ const Index = () => {
           ))}
         </section>
 
+        {/* Reunion Feed */}
+        <ReunionFeed />
+
         {/* Quick info for logged-out users */}
         {!user && (
           <section className="mt-8 rounded-2xl border border-primary/12 bg-card/60 backdrop-blur-sm p-6 text-center">
